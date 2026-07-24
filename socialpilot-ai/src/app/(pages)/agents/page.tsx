@@ -26,15 +26,12 @@ const accentGradients: Record<string, string> = {
 };
 
 function AgentCard({ agent, index }: { agent: AgentItem; index: number }) {
-  const { toggleAgent, updateAgentTask } = useAppStore();
+  const { toggleAgent, triggerAgentTask } = useAppStore();
   const enabled = agent.status !== "idle";
   const colors = colorMap[agent.color] ?? colorMap.blue;
 
   const handleManualRun = () => {
-    updateAgentTask(agent.id, "Executing manual task step & updating memory...", "running");
-    setTimeout(() => {
-      updateAgentTask(agent.id, "Task completed successfully. Monitoring channel.", "active");
-    }, 1500);
+    triggerAgentTask(agent.id, `Exec task: Generate content & optimize strategy`);
   };
 
   return (

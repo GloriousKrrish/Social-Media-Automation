@@ -33,10 +33,14 @@ const topPosts = [
   { id: 5, title: "Behind the Algorithm: Instagram Reach Decoded",          platform: "Instagram", reach: 94800, engagement: 7.6,  likes: 5840 },
 ];
 
-const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+import { useAppStore } from "@/store/app-store";
 
 export default function AnalyticsPage() {
+  const { posts } = useAppStore();
   const [period, setPeriod] = useState("30d");
+
+  const publishedCount = posts.filter(p => p.status === "published" || p.status === "scheduled").length;
+  const dynamicReach = 3220000 + (publishedCount * 12500);
 
   return (
     <div className="page-container">
@@ -69,7 +73,7 @@ export default function AnalyticsPage() {
       {/* Top Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14, marginBottom: 24 }}>
         {[
-          { label: "Total Reach",     value: 3220000, change: +18.6, icon: Eye,           color: "#2563EB", bg: "#EFF6FF" },
+          { label: "Total Reach",     value: dynamicReach, change: +18.6, icon: Eye,           color: "#2563EB", bg: "#EFF6FF" },
           { label: "Impressions",     value: 8400000, change: +24.2, icon: TrendingUp,     color: "#7C3AED", bg: "#F5F3FF" },
           { label: "Engagement Rate", value: "6.4%",  change: +1.2,  icon: Heart,          color: "#059669", bg: "#ECFDF5" },
           { label: "Followers",       value: 124200,  change: +12.8, icon: Users,          color: "#D97706", bg: "#FFFBEB" },

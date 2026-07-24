@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useUIStore } from "@/store/ui-store";
 import Sidebar from "./Sidebar";
 import TopNav from "./TopNav";
+import { useAutoSyncEngine } from "@/hooks/useAutoSyncEngine";
 import CommandPalette from "@/components/common/CommandPalette";
 import DashboardPage from "@/app/(pages)/dashboard/page";
 import AgentsPage from "@/app/(pages)/agents/page";
@@ -43,6 +44,7 @@ function PageRenderer({ page }: { page: string }) {
 }
 
 export default function AppShell() {
+  useAutoSyncEngine();
   const { sidebarCollapsed } = useUIStore();
   const [activePage, setActivePage] = useState("dashboard");
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
