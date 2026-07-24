@@ -30,8 +30,9 @@ const topPosts = [
   { id: 2, title: "The Secret Framework Behind 10M Impression Campaigns",   platform: "Instagram", reach: 126000,engagement: 9.8,  likes: 7420 },
   { id: 3, title: "We analyzed 1000 viral posts. Here's what we found 🧵",  platform: "Twitter",   reach: 48200, engagement: 8.2,  likes: 1820 },
   { id: 4, title: "Why B2B Marketing in 2025 Is Nothing Like 2020",        platform: "LinkedIn",  reach: 68400, engagement: 11.1, likes: 2140 },
-  { id: 5, title: "Behind the Algorithm: Instagram Reach Decoded",          platform: "Instagram", reach: 94800, engagement: 7.6,  likes: 5840 },
 ];
+
+const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 import { useAppStore } from "@/store/app-store";
 
