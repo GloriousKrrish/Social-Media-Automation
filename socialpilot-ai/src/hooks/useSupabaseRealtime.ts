@@ -45,8 +45,10 @@ export function useSupabaseRealtime({
       )
       .subscribe();
 
+    const client = supabase;
     return () => {
-      supabase.removeChannel(channel);
+      client.removeChannel(channel);
     };
   }, [table, schema, event, queryClient]);
 }
+
