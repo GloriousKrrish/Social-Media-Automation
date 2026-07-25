@@ -298,6 +298,30 @@ export default function TopNav({ sidebarWidth, activePage, onOpenCommandPalette 
         />
       </button>
 
+      {/* User Login / Profile Avatar Link */}
+      <a
+        href="/login"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "4px 10px",
+          borderRadius: 8,
+          background: "#F7F3ED",
+          border: "1px solid #EAE4DC",
+          textDecoration: "none",
+          color: "#1C1613",
+          fontSize: 12,
+          fontWeight: 700,
+        }}
+      >
+        <div style={{ width: 26, height: 26, borderRadius: "50%", background: "#2563EB", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 11 }}>
+          AR
+        </div>
+        <span>Alex</span>
+      </a>
+
+
       <style jsx>{`
         .dropdown-action-item {
           display: flex;
