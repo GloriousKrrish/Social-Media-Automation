@@ -20,7 +20,7 @@ import {
   Activity,
   TrendingUp,
   Globe,
-  Layers,
+  Sliders,
   ChevronRight,
 } from "lucide-react";
 import { signInWithSupabase, signUpWithSupabase, resetSupabasePassword, isSupabaseConfigured } from "@/lib/supabase";
@@ -35,8 +35,8 @@ const capabilities = [
     icon: Bot,
     stats: "12 Agents Active",
     metric: "+94.8% Growth",
-    color: "#2563EB",
-    gradient: "linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)",
+    iconBg: "#F5F3FF",
+    iconColor: "#7C3AED",
   },
   {
     id: "scheduler",
@@ -46,8 +46,8 @@ const capabilities = [
     icon: Calendar,
     stats: "1,420 Posts Sent",
     metric: "100% On-Time",
-    color: "#059669",
-    gradient: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+    iconBg: "#ECFDF5",
+    iconColor: "#059669",
   },
   {
     id: "automation",
@@ -57,8 +57,8 @@ const capabilities = [
     icon: Zap,
     stats: "48 Workflows Active",
     metric: "0.2s Response",
-    color: "#7C3AED",
-    gradient: "linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)",
+    iconBg: "#EFF6FF",
+    iconColor: "#2563EB",
   },
 ];
 
@@ -148,7 +148,7 @@ export default function LoginPage() {
         if (error) throw error;
 
         if (data.user) {
-          setSuccessMsg("Account created successfully! Checking session...");
+          setSuccessMsg("Account created successfully!");
           if (data.session) {
             login(data.session.access_token, {
               id: data.user.id,
@@ -191,7 +191,7 @@ export default function LoginPage() {
         const { error } = await resetSupabasePassword(email);
         if (error) throw error;
       }
-      setSuccessMsg("Password reset link has been dispatched to your email address!");
+      setSuccessMsg("Password reset link dispatched to your email address!");
     } catch (err: any) {
       setErrorMsg(err.message || "Unable to send password reset link.");
     } finally {
@@ -218,34 +218,27 @@ export default function LoginPage() {
       style={{
         minHeight: "100vh",
         display: "flex",
-        background: "#090A0F",
-        fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif",
-        color: "#FFFFFF",
+        background: "#FDFBF7",
+        fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif",
+        color: "#1C1613",
         overflow: "hidden",
         position: "relative",
       }}
     >
-      {/* Background Ambient Glow & Grid Lines */}
+      {/* Soft Ambient Warm Glow Background */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: "radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.15) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(124, 58, 237, 0.12) 0%, transparent 40%)",
+          backgroundImage: `
+            radial-gradient(circle at 10% 20%, rgba(200, 138, 88, 0.08) 0%, transparent 40%),
+            radial-gradient(circle at 90% 80%, rgba(60, 42, 33, 0.05) 0%, transparent 40%)
+          `,
           pointerEvents: "none",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-          pointerEvents: "none",
-          opacity: 0.6,
         }}
       />
 
-      {/* LEFT COLUMN: Feature Showcase & Capabilities */}
+      {/* LEFT COLUMN: Clean Luxury Light Feature Showcase */}
       <div
         style={{
           flex: 1.2,
@@ -255,7 +248,7 @@ export default function LoginPage() {
           justifyContent: "space-between",
           position: "relative",
           zIndex: 1,
-          borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+          borderRight: "1px solid #EAE4DC",
         }}
       >
         {/* Brand Header */}
@@ -265,35 +258,34 @@ export default function LoginPage() {
               width: 44,
               height: 44,
               borderRadius: 14,
-              background: "linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)",
+              background: "#3C2A21",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 8px 24px rgba(37, 99, 235, 0.4)",
+              boxShadow: "0 4px 12px rgba(60, 42, 33, 0.2)",
             }}
           >
             <Sparkles size={22} color="#FFFFFF" />
           </div>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", color: "#FFFFFF" }}>
-              SocialPilot <span style={{ color: "#38BDF8" }}>AI</span>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: "#1C1613" }}>
+              SocialPilot <span style={{ color: "#C88A58" }}>AI</span>
             </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>
+            <div style={{ fontSize: 12, color: "#6E6259", fontWeight: 500 }}>
               Enterprise Social Automation Infrastructure
             </div>
           </div>
         </div>
 
-        {/* Dynamic Capability Cards Slider */}
+        {/* Feature Showcase Card */}
         <div style={{ marginTop: "auto", marginBottom: "auto", position: "relative" }}>
-
           <AnimatePresence mode="wait">
             <motion.div
               key={currentCap.id}
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 30 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.35 }}
             >
               {/* Badge */}
               <div
@@ -301,90 +293,103 @@ export default function LoginPage() {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 8,
-                  padding: "6px 16px",
+                  padding: "6px 14px",
                   borderRadius: 99,
-                  background: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  backdropFilter: "blur(12px)",
-                  marginBottom: 24,
+                  background: "#F7F3ED",
+                  border: "1px solid #EAE4DC",
+                  marginBottom: 20,
                 }}
               >
-                <CapIcon size={16} color={currentCap.color} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#E2E8F0" }}>{currentCap.badge}</span>
+                <div
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    background: currentCap.iconBg,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <CapIcon size={14} color={currentCap.iconColor} />
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#3C2A21" }}>{currentCap.badge}</span>
               </div>
 
               {/* Title & Description */}
               <h2
                 style={{
-                  fontSize: 38,
+                  fontSize: 36,
                   fontWeight: 800,
-                  lineHeight: 1.15,
+                  lineHeight: 1.2,
                   letterSpacing: "-0.03em",
                   marginBottom: 16,
-                  color: "#FFFFFF",
-                  maxWidth: 540,
+                  color: "#1C1613",
+                  maxWidth: 520,
                 }}
               >
                 {currentCap.title}
               </h2>
               <p
                 style={{
-                  fontSize: 16,
+                  fontSize: 15,
                   lineHeight: 1.6,
-                  color: "#94A3B8",
+                  color: "#6E6259",
                   maxWidth: 480,
-                  marginBottom: 36,
+                  marginBottom: 32,
                 }}
               >
                 {currentCap.description}
               </p>
 
-              {/* Interactive Floating Metric Pill Cards */}
+              {/* Clean White KPI Cards */}
               <div style={{ display: "flex", gap: 16 }}>
                 <div
                   style={{
-                    padding: "16px 20px",
-                    borderRadius: 16,
-                    background: "rgba(255, 255, 255, 0.04)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                    backdropFilter: "blur(16px)",
+                    flex: 1,
+                    padding: "20px 24px",
+                    borderRadius: 20,
+                    background: "#FFFFFF",
+                    border: "1px solid #EAE4DC",
+                    boxShadow: "0 4px 12px rgba(60, 42, 33, 0.04)",
                   }}
                 >
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>SYSTEM STATUS</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#F8FAFC", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                    <Activity size={16} color="#10B981" /> {currentCap.stats}
+                  <div style={{ fontSize: 11, color: "#A3968C", fontWeight: 700, letterSpacing: "0.05em" }}>SYSTEM STATUS</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#1C1613", marginTop: 4, display: "flex", alignItems: "center", gap: 8 }}>
+                    <Activity size={18} color="#4A7A5D" /> {currentCap.stats}
                   </div>
                 </div>
 
                 <div
                   style={{
-                    padding: "16px 20px",
-                    borderRadius: 16,
-                    background: "rgba(255, 255, 255, 0.04)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                    backdropFilter: "blur(16px)",
+                    flex: 1,
+                    padding: "20px 24px",
+                    borderRadius: 20,
+                    background: "#FFFFFF",
+                    border: "1px solid #EAE4DC",
+                    boxShadow: "0 4px 12px rgba(60, 42, 33, 0.04)",
                   }}
                 >
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>PERFORMANCE GAIN</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#10B981", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                    <TrendingUp size={16} /> {currentCap.metric}
+                  <div style={{ fontSize: 11, color: "#A3968C", fontWeight: 700, letterSpacing: "0.05em" }}>PERFORMANCE GAIN</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#4A7A5D", marginTop: 4, display: "flex", alignItems: "center", gap: 8 }}>
+                    <TrendingUp size={18} /> {currentCap.metric}
                   </div>
                 </div>
               </div>
             </motion.div>
           </AnimatePresence>
 
-          {/* Slide Indicator Dots */}
-          <div style={{ display: "flex", gap: 8, marginTop: 40 }}>
+          {/* Indicator Dots */}
+          <div style={{ display: "flex", gap: 8, marginTop: 32 }}>
             {capabilities.map((c, i) => (
               <button
                 key={c.id}
                 onClick={() => setActiveSlide(i)}
                 style={{
-                  width: activeSlide === i ? 32 : 10,
-                  height: 10,
+                  width: activeSlide === i ? 28 : 8,
+                  height: 8,
                   borderRadius: 99,
-                  background: activeSlide === i ? "#2563EB" : "rgba(255, 255, 255, 0.2)",
+                  background: activeSlide === i ? "#3C2A21" : "#D6CCC0",
                   border: "none",
                   cursor: "pointer",
                   transition: "all 0.3s ease",
@@ -394,21 +399,21 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Capability Footer */}
-        <div style={{ display: "flex", alignItems: "center", gap: 24, fontSize: 13, color: "#64748B" }}>
+        {/* Footer Features */}
+        <div style={{ display: "flex", alignItems: "center", gap: 24, fontSize: 12, fontWeight: 600, color: "#6E6259" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <ShieldCheck size={16} color="#10B981" /> Supabase Encryption
+            <ShieldCheck size={16} color="#4A7A5D" /> Supabase Foundation
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Globe size={16} color="#38BDF8" /> Multi-Tenant Workspaces
+            <Globe size={16} color="#C88A58" /> Multi-Tenant Workspace
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Layers size={16} color="#A855F7" /> Realtime Webhooks
+            <Sliders size={16} color="#3C2A21" /> Realtime AI Engine
           </div>
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Interactive Form & Authentication */}
+      {/* RIGHT COLUMN: Pure White Light Auth Card */}
       <div
         style={{
           flex: 1,
@@ -421,31 +426,30 @@ export default function LoginPage() {
         }}
       >
         <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.96 }}
+          initial={{ opacity: 0, y: 16, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          transition={{ duration: 0.4 }}
           style={{
             width: "100%",
-            maxWidth: 460,
-            background: "rgba(15, 23, 42, 0.75)",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
+            maxWidth: 440,
+            background: "#FFFFFF",
+            border: "1px solid #EAE4DC",
             borderRadius: 24,
             padding: 40,
-            boxShadow: "0 32px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)",
-            backdropFilter: "blur(24px)",
+            boxShadow: "0 12px 32px -4px rgba(60, 42, 33, 0.08)",
           }}
         >
-          {/* Header & Tab Selector */}
-          <div style={{ marginBottom: 32, textAlign: "center" }}>
-            <h3 style={{ fontSize: 24, fontWeight: 800, color: "#F8FAFC", margin: 0, letterSpacing: "-0.02em" }}>
-              {mode === "signin" && "Welcome back"}
-              {mode === "signup" && "Create your account"}
-              {mode === "forgot" && "Reset your password"}
+          {/* Header */}
+          <div style={{ marginBottom: 28, textAlign: "center" }}>
+            <h3 style={{ fontSize: 24, fontWeight: 800, color: "#1C1613", margin: 0, letterSpacing: "-0.02em" }}>
+              {mode === "signin" && "Welcome Back"}
+              {mode === "signup" && "Create Your Account"}
+              {mode === "forgot" && "Reset Password"}
             </h3>
-            <p style={{ fontSize: 14, color: "#94A3B8", margin: "6px 0 0" }}>
-              {mode === "signin" && "Access your AI agents and real-time social metrics"}
+            <p style={{ fontSize: 13, color: "#6E6259", margin: "6px 0 0" }}>
+              {mode === "signin" && "Access your AI agents and real-time social performance"}
               {mode === "signup" && "Start automating your social channels with AI"}
-              {mode === "forgot" && "Enter your email to receive a secure recovery link"}
+              {mode === "forgot" && "Enter your email for account recovery instructions"}
             </p>
 
             {/* Segmented Mode Selector */}
@@ -456,24 +460,25 @@ export default function LoginPage() {
                   gridTemplateColumns: "1fr 1fr",
                   gap: 4,
                   padding: 4,
-                  background: "rgba(255, 255, 255, 0.05)",
-                  borderRadius: 14,
-                  marginTop: 24,
-                  border: "1px solid rgba(255, 255, 255, 0.06)",
+                  background: "#F7F3ED",
+                  borderRadius: 12,
+                  marginTop: 20,
+                  border: "1px solid #EAE4DC",
                 }}
               >
                 <button
                   onClick={() => { setMode("signin"); setErrorMsg(""); setSuccessMsg(""); }}
                   style={{
-                    padding: "10px 0",
+                    padding: "9px 0",
                     border: "none",
-                    borderRadius: 10,
-                    background: mode === "signin" ? "#2563EB" : "transparent",
-                    color: mode === "signin" ? "#FFFFFF" : "#94A3B8",
+                    borderRadius: 8,
+                    background: mode === "signin" ? "#FFFFFF" : "transparent",
+                    color: mode === "signin" ? "#1C1613" : "#6E6259",
                     fontSize: 13,
                     fontWeight: 700,
                     cursor: "pointer",
                     transition: "all 0.2s ease",
+                    boxShadow: mode === "signin" ? "0 2px 6px rgba(60, 42, 33, 0.06)" : "none",
                   }}
                 >
                   Sign In
@@ -481,15 +486,16 @@ export default function LoginPage() {
                 <button
                   onClick={() => { setMode("signup"); setErrorMsg(""); setSuccessMsg(""); }}
                   style={{
-                    padding: "10px 0",
+                    padding: "9px 0",
                     border: "none",
-                    borderRadius: 10,
-                    background: mode === "signup" ? "#2563EB" : "transparent",
-                    color: mode === "signup" ? "#FFFFFF" : "#94A3B8",
+                    borderRadius: 8,
+                    background: mode === "signup" ? "#FFFFFF" : "transparent",
+                    color: mode === "signup" ? "#1C1613" : "#6E6259",
                     fontSize: 13,
                     fontWeight: 700,
                     cursor: "pointer",
                     transition: "all 0.2s ease",
+                    boxShadow: mode === "signup" ? "0 2px 6px rgba(60, 42, 33, 0.06)" : "none",
                   }}
                 >
                   Sign Up
@@ -498,64 +504,64 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Feedback Messages */}
+          {/* Feedback Alerts */}
           {errorMsg && (
             <motion.div
-              initial={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               style={{
-                padding: "12px 16px",
-                borderRadius: 12,
-                background: "rgba(239, 68, 68, 0.12)",
-                border: "1px solid rgba(239, 68, 68, 0.3)",
-                color: "#FCA5A5",
+                padding: "12px 14px",
+                borderRadius: 10,
+                background: "#FDF4F4",
+                border: "1px solid #A85858",
+                color: "#A85858",
                 fontSize: 13,
                 fontWeight: 600,
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                marginBottom: 20,
+                marginBottom: 18,
               }}
             >
-              <AlertCircle size={16} color="#EF4444" style={{ flexShrink: 0 }} />
+              <AlertCircle size={16} color="#A85858" style={{ flexShrink: 0 }} />
               <span>{errorMsg}</span>
             </motion.div>
           )}
 
           {successMsg && (
             <motion.div
-              initial={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               style={{
-                padding: "12px 16px",
-                borderRadius: 12,
-                background: "rgba(16, 185, 129, 0.12)",
-                border: "1px solid rgba(16, 185, 129, 0.3)",
-                color: "#6EE7B7",
+                padding: "12px 14px",
+                borderRadius: 10,
+                background: "#F2F7F4",
+                border: "1px solid #4A7A5D",
+                color: "#4A7A5D",
                 fontSize: 13,
                 fontWeight: 600,
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                marginBottom: 20,
+                marginBottom: 18,
               }}
             >
-              <CheckCircle2 size={16} color="#10B981" style={{ flexShrink: 0 }} />
+              <CheckCircle2 size={16} color="#4A7A5D" style={{ flexShrink: 0 }} />
               <span>{successMsg}</span>
             </motion.div>
           )}
 
-          {/* Forms */}
+          {/* Form */}
           <form onSubmit={mode === "signin" ? handleSignIn : mode === "signup" ? handleSignUp : handleForgotPassword}>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Full Name Input (Sign Up Mode) */}
+              {/* Full Name (Sign Up Mode) */}
               {mode === "signup" && (
                 <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: "#CBD5E1", marginBottom: 6, display: "block" }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: "#1C1613", marginBottom: 6, display: "block" }}>
                     Full Name
                   </label>
                   <div style={{ position: "relative" }}>
-                    <User size={16} color="#64748B" style={{ position: "absolute", left: 14, top: 14 }} />
+                    <User size={16} color="#6E6259" style={{ position: "absolute", left: 14, top: 13 }} />
                     <input
                       type="text"
                       required
@@ -564,11 +570,11 @@ export default function LoginPage() {
                       onChange={(e) => setFullName(e.target.value)}
                       style={{
                         width: "100%",
-                        padding: "12px 14px 12px 42px",
-                        background: "rgba(15, 23, 42, 0.6)",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                        borderRadius: 12,
-                        color: "#FFFFFF",
+                        padding: "10px 14px 10px 42px",
+                        background: "#F7F3ED",
+                        border: "1px solid #EAE4DC",
+                        borderRadius: 10,
+                        color: "#1C1613",
                         fontSize: 14,
                         outline: "none",
                         boxSizing: "border-box",
@@ -578,13 +584,13 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Email Input */}
+              {/* Email Address */}
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: "#CBD5E1", marginBottom: 6, display: "block" }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: "#1C1613", marginBottom: 6, display: "block" }}>
                   Work Email Address
                 </label>
                 <div style={{ position: "relative" }}>
-                  <Mail size={16} color="#64748B" style={{ position: "absolute", left: 14, top: 14 }} />
+                  <Mail size={16} color="#6E6259" style={{ position: "absolute", left: 14, top: 13 }} />
                   <input
                     type="email"
                     required
@@ -593,11 +599,11 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     style={{
                       width: "100%",
-                      padding: "12px 14px 12px 42px",
-                      background: "rgba(15, 23, 42, 0.6)",
-                      border: "1px solid rgba(255, 255, 255, 0.12)",
-                      borderRadius: 12,
-                      color: "#FFFFFF",
+                      padding: "10px 14px 10px 42px",
+                      background: "#F7F3ED",
+                      border: "1px solid #EAE4DC",
+                      borderRadius: 10,
+                      color: "#1C1613",
                       fontSize: 14,
                       outline: "none",
                       boxSizing: "border-box",
@@ -606,23 +612,23 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Password Input (Sign In / Sign Up Mode) */}
+              {/* Password Input */}
               {mode !== "forgot" && (
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <label style={{ fontSize: 13, fontWeight: 600, color: "#CBD5E1" }}>Password</label>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: "#1C1613" }}>Password</label>
                     {mode === "signin" && (
                       <button
                         type="button"
                         onClick={() => { setMode("forgot"); setErrorMsg(""); setSuccessMsg(""); }}
-                        style={{ background: "none", border: "none", color: "#38BDF8", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                        style={{ background: "none", border: "none", color: "#C88A58", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                       >
                         Forgot password?
                       </button>
                     )}
                   </div>
                   <div style={{ position: "relative" }}>
-                    <Lock size={16} color="#64748B" style={{ position: "absolute", left: 14, top: 14 }} />
+                    <Lock size={16} color="#6E6259" style={{ position: "absolute", left: 14, top: 13 }} />
                     <input
                       type={showPassword ? "text" : "password"}
                       required
@@ -631,11 +637,11 @@ export default function LoginPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       style={{
                         width: "100%",
-                        padding: "12px 44px 12px 42px",
-                        background: "rgba(15, 23, 42, 0.6)",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                        borderRadius: 12,
-                        color: "#FFFFFF",
+                        padding: "10px 44px 10px 42px",
+                        background: "#F7F3ED",
+                        border: "1px solid #EAE4DC",
+                        borderRadius: 10,
+                        color: "#1C1613",
                         fontSize: 14,
                         outline: "none",
                         boxSizing: "border-box",
@@ -644,52 +650,52 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      style={{ position: "absolute", right: 14, top: 14, background: "none", border: "none", cursor: "pointer", display: "flex" }}
+                      style={{ position: "absolute", right: 14, top: 13, background: "none", border: "none", cursor: "pointer", display: "flex" }}
                     >
-                      {showPassword ? <EyeOff size={16} color="#64748B" /> : <Eye size={16} color="#64748B" />}
+                      {showPassword ? <EyeOff size={16} color="#6E6259" /> : <Eye size={16} color="#6E6259" />}
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Remember Me Checkbox */}
+              {/* Remember Me */}
               {mode === "signin" && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
                   <input
                     type="checkbox"
                     id="remember"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    style={{ borderRadius: 4, cursor: "pointer" }}
+                    style={{ borderRadius: 4, cursor: "pointer", accentColor: "#3C2A21" }}
                   />
-                  <label htmlFor="remember" style={{ fontSize: 13, color: "#94A3B8", cursor: "pointer" }}>
+                  <label htmlFor="remember" style={{ fontSize: 13, color: "#6E6259", fontWeight: 500, cursor: "pointer" }}>
                     Keep me signed in for 30 days
                   </label>
                 </div>
               )}
 
-              {/* Action Submit Button */}
+              {/* Primary Action Button */}
               <motion.button
                 type="submit"
                 disabled={isLoading}
-                whileHover={{ scale: 1.01, y: -1 }}
+                whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
                 style={{
                   width: "100%",
-                  padding: "14px 0",
-                  borderRadius: 12,
-                  background: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
+                  padding: "12px 0",
+                  borderRadius: 10,
+                  background: "#3C2A21",
                   color: "#FFFFFF",
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: 700,
                   border: "none",
                   cursor: isLoading ? "not-allowed" : "pointer",
-                  marginTop: 12,
+                  marginTop: 8,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  boxShadow: "0 8px 24px rgba(37, 99, 235, 0.35)",
+                  boxShadow: "0 2px 6px rgba(60, 42, 33, 0.2)",
                 }}
               >
                 {isLoading ? (
@@ -701,12 +707,12 @@ export default function LoginPage() {
                       {mode === "signup" && "Create Free Workspace"}
                       {mode === "forgot" && "Send Reset Link"}
                     </span>
-                    <ArrowRight size={16} />
+                    <ArrowRight size={15} />
                   </>
                 )}
               </motion.button>
 
-              {/* Back to Sign In Link (Forgot Password mode) */}
+              {/* Back to Sign In Link */}
               {mode === "forgot" && (
                 <button
                   type="button"
@@ -714,7 +720,7 @@ export default function LoginPage() {
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#94A3B8",
+                    color: "#6E6259",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -728,21 +734,19 @@ export default function LoginPage() {
             </div>
           </form>
 
-          {/* Quick Demo Access Bar */}
-          <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid rgba(255, 255, 255, 0.08)", textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "#64748B", marginBottom: 12 }}>Want to explore the platform right away?</div>
-            <motion.button
+          {/* Quick Demo Access */}
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid #EAE4DC", textAlign: "center" }}>
+            <div style={{ fontSize: 12, color: "#6E6259", fontWeight: 500, marginBottom: 10 }}>Want to explore the platform right away?</div>
+            <button
               type="button"
               onClick={handleDemoAccess}
-              whileHover={{ y: -1 }}
-              whileTap={{ scale: 0.97 }}
               style={{
                 width: "100%",
-                padding: "10px 0",
-                borderRadius: 10,
-                background: "rgba(255, 255, 255, 0.05)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                color: "#E2E8F0",
+                padding: "9px 0",
+                borderRadius: 8,
+                background: "#F7F3ED",
+                border: "1px solid #EAE4DC",
+                color: "#1C1613",
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -752,10 +756,10 @@ export default function LoginPage() {
                 gap: 6,
               }}
             >
-              <Sparkles size={14} color="#38BDF8" />
+              <Sparkles size={14} color="#C88A58" />
               <span>Explore Demo Workspace</span>
-              <ChevronRight size={14} color="#64748B" />
-            </motion.button>
+              <ChevronRight size={14} color="#A3968C" />
+            </button>
           </div>
         </motion.div>
       </div>
