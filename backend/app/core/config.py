@@ -32,10 +32,31 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "socialpilot_db"
+    DATABASE_URL: str | None = None
     SQLALCHEMY_DATABASE_URI: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/socialpilot_db"
+
+    @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
+    def assemble_db_connection(cls, v: Union[str, None], values: dict) -> str:
+        db_url = values.data.get("DATABASE_URL") or v
+        if db_url:
+            if db_url.startswith("postgresql://"):
+                return db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            elif db_url.startswith("postgres://"):
+                return db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+            return db_url
+        return "postgresql+asyncpg://postgres:postgres@localhost:5432/socialpilot_db"
+
+
+    # SUPABASE
+    SUPABASE_URL: str | None = None
+    SUPABASE_ANON_KEY: str | None = None
+    SUPABASE_SERVICE_ROLE_KEY: str | None = None
+    SUPABASE_JWT_SECRET: str | None = None
+    SUPABASE_STORAGE_BUCKET: str = "socialpilot-assets"
 
     # REDIS
     REDIS_URL: str = "redis://localhost:6379/0"
+
 
     # SECURITY & JWT
     SECRET_KEY: str = "SUPER_SECRET_ENTERPRISE_KEY_CHANGE_IN_PRODUCTION_32_BYTES"

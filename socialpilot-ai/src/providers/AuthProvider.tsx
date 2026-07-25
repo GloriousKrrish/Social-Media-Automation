@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { apiClient } from "@/lib/api-client";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 interface UserProfile {
   id: string;
@@ -26,10 +27,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // 1. Supabase Session Sync (if configured)
+    if (isSupabaseConfigured && supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          apiClient.setToken(session.access_token);
+          setUser({
+            id: session.user.id,
+            email: session.user.email || "",
+            full_name: session.user.user_metadata?.full_name || session.user.email || "User",
+            is_active: true,
+            is_verified: true,
+          });
+        }
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session) {
+          apiClient.setToken(session.access_token);
+          setUser({
+            id: session.user.id,
+            email: session.user.email || "",
+            full_name: session.user.user_metadata?.full_name || session.user.email || "User",
+            is_active: true,
+            is_verified: true,
+          });
+        } else {
+          apiClient.setToken(null);
+          setUser(null);
+        }
+      });
+
+      setIsLoading(false);
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+
+    // 2. Local Storage Token Sync (Fallback)
     const savedToken = localStorage.getItem("socialpilot_access_token");
     if (savedToken) {
       apiClient.setToken(savedToken);
-      // Fetch active user profile from FastAPI backend
       apiClient
         .get<UserProfile>("/users/me")
         .then((profile) => {
@@ -52,6 +90,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
+    if (isSupabaseConfigured && supabase) {
+      supabase.auth.signOut();
+    }
     apiClient.setToken(null);
     setUser(null);
   };

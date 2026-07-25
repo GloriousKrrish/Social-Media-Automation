@@ -59,4 +59,13 @@ class LocalS3StorageService(StorageService):
         return True
 
 
-storage_service = LocalS3StorageService()
+def get_storage_service() -> StorageService:
+    from app.core.config import settings
+    if settings.SUPABASE_URL:
+        from app.core.supabase_storage import SupabaseStorageService
+        return SupabaseStorageService()
+    return LocalS3StorageService()
+
+
+storage_service = get_storage_service()
+
