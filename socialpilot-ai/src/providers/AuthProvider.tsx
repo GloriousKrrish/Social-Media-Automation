@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { apiClient } from "@/lib/api-client";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
+import { realtimeClient, subscriptionManager } from "@/lib/realtime";
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -109,11 +111,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
           setUser(profile);
           localStorage.setItem("socialpilot_user_profile", JSON.stringify(profile));
+          realtimeClient.reconnect();
         } else {
           apiClient.setToken(null);
           setUser(null);
           localStorage.removeItem("socialpilot_user_profile");
           localStorage.removeItem("socialpilot_access_token");
+          subscriptionManager.clearAll();
+          realtimeClient.disconnect();
         }
       });
 
@@ -140,6 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(null);
             localStorage.removeItem("socialpilot_access_token");
             localStorage.removeItem("socialpilot_user_profile");
+            subscriptionManager.clearAll();
           }
         })
         .finally(() => {
@@ -156,6 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("socialpilot_access_token", token);
     localStorage.setItem("socialpilot_user_profile", JSON.stringify(profile));
     setUser(profile);
+    realtimeClient.reconnect();
   };
 
   const logout = () => {
@@ -165,6 +172,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     apiClient.setToken(null);
     localStorage.removeItem("socialpilot_access_token");
     localStorage.removeItem("socialpilot_user_profile");
+    subscriptionManager.clearAll();
+    realtimeClient.disconnect();
     setUser(null);
   };
 

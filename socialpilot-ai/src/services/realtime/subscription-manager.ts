@@ -4,6 +4,7 @@
 
 import { realtimeClient } from "./realtime-client";
 import { TableName, PostgresEventType, RealtimeEventHandler, PostgresPayload } from "./types";
+import { RealtimeLogger } from "./logger";
 
 type SubscriptionKey = string;
 
@@ -38,9 +39,14 @@ class SubscriptionManager {
     }
 
     const handlers = this.handlersMap.get(key)!;
-    handlers.add(handler);
+    
+    // React 18/19 StrictMode safety check
+    if (!handlers.has(handler)) {
+      handlers.add(handler);
+      RealtimeLogger.debug("SubscriptionManager", `Subscribed listener to ${key}. Total listeners for key: ${handlers.size}`);
+    }
 
-    // Bind postgres_changes listener on the single shared channel if not yet attached for this table
+    // Ensure postgres_changes binding attached to single channel for this table
     this.ensureTableBinding(table, schema);
 
     return () => {
@@ -59,6 +65,7 @@ class SubscriptionManager {
 
     if (handlers) {
       handlers.delete(handler);
+      RealtimeLogger.debug("SubscriptionManager", `Unsubscribed listener from ${key}. Remaining: ${handlers.size}`);
       if (handlers.size === 0) {
         this.handlersMap.delete(key);
       }
@@ -72,6 +79,8 @@ class SubscriptionManager {
     const channel = realtimeClient.getChannel();
     if (channel) {
       this.boundTables.add(bindingKey);
+      RealtimeLogger.info("SubscriptionManager", `Attaching postgres_changes binding for table: ${bindingKey}`);
+      
       channel.on(
         "postgres_changes" as any,
         { event: "*", schema, table },
@@ -88,19 +97,31 @@ class SubscriptionManager {
     }
 
     const { table, schema, eventType } = payload;
+    RealtimeLogger.info("SubscriptionManager", `Processing event [${eventType}] on ${schema}.${table}`);
 
-    // Dispatch to specific event listeners (e.g. public:notifications:INSERT)
     const specificKey = this.makeKey(table, eventType, schema);
     const wildcardKey = this.makeKey(table, "*", schema);
 
     const specificHandlers = this.handlersMap.get(specificKey);
-    if (specificHandlers) {
-      specificHandlers.forEach((fn) => fn(payload));
+    if (specificHandlers && specificHandlers.size > 0) {
+      specificHandlers.forEach((fn) => {
+        try {
+          fn(payload);
+        } catch (err) {
+          RealtimeLogger.error("SubscriptionManager", `Error executing handler for ${specificKey}`, err);
+        }
+      });
     }
 
     const wildcardHandlers = this.handlersMap.get(wildcardKey);
-    if (wildcardHandlers) {
-      wildcardHandlers.forEach((fn) => fn(payload));
+    if (wildcardHandlers && wildcardHandlers.size > 0) {
+      wildcardHandlers.forEach((fn) => {
+        try {
+          fn(payload);
+        } catch (err) {
+          RealtimeLogger.error("SubscriptionManager", `Error executing wildcard handler for ${wildcardKey}`, err);
+        }
+      });
     }
   }
 
@@ -113,6 +134,7 @@ class SubscriptionManager {
   }
 
   public clearAll(): void {
+    RealtimeLogger.info("SubscriptionManager", "Clearing all active table handlers and bindings.");
     this.handlersMap.clear();
     this.boundTables.clear();
   }

@@ -4,7 +4,8 @@
 
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { ConnectionStatus, PostgresPayload, PostgresEventType } from "./types";
+import { ConnectionStatus, PostgresPayload } from "./types";
+import { RealtimeLogger } from "./logger";
 
 export type StatusListener = (status: ConnectionStatus, error?: Error | null) => void;
 
@@ -17,12 +18,12 @@ class RealtimeClient {
   
   // Deduplication sliding window
   private processedEvents: Map<string, number> = new Map();
-  private readonly DEDUP_WINDOW_MS = 5000; // 5 seconds
+  private readonly DEDUP_WINDOW_MS = 10000; // 10 seconds sliding window
   private dedupCleanupInterval: NodeJS.Timeout | null = null;
 
   // Reconnection and Heartbeat state
   private retryCount = 0;
-  private maxRetries = 10;
+  private maxRetries = 12;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private isInitializing = false;
@@ -31,6 +32,7 @@ class RealtimeClient {
     if (typeof window !== "undefined") {
       window.addEventListener("online", this.handleOnline);
       window.addEventListener("offline", this.handleOffline);
+      document.addEventListener("visibilitychange", this.handleVisibilityChange);
     }
   }
 
@@ -59,6 +61,7 @@ class RealtimeClient {
 
   private setStatus(newStatus: ConnectionStatus, error: Error | null = null) {
     if (this.status === newStatus && this.lastError === error) return;
+    RealtimeLogger.info("Client", `Status transition: ${this.status} -> ${newStatus}`, error ? { error: error.message } : undefined);
     this.status = newStatus;
     this.lastError = error;
     this.statusListeners.forEach((fn) => fn(newStatus, error));
@@ -70,7 +73,7 @@ class RealtimeClient {
     this.setStatus("connecting");
 
     if (!isSupabaseConfigured || !supabase) {
-      // In offline/unconfigured fallback mode, mark as connected to allow mock/local simulation
+      RealtimeLogger.warn("Client", "Supabase environment variables unconfigured. Running in local event simulation mode.");
       this.setStatus("connected");
       this.isInitializing = false;
       this.startHeartbeat();
@@ -79,11 +82,12 @@ class RealtimeClient {
 
     try {
       if (this.channel) {
+        RealtimeLogger.debug("Client", "Cleaning existing channel before connecting new channel.");
         supabase.removeChannel(this.channel);
         this.channel = null;
       }
 
-      // Initialize the SINGLE shared enterprise channel
+      // Initialize SINGLE shared enterprise WebSocket channel
       this.channel = supabase.channel("socialpilot_enterprise_realtime", {
         config: {
           broadcast: { self: true },
@@ -96,21 +100,26 @@ class RealtimeClient {
 
         if (status === "SUBSCRIBED") {
           this.retryCount = 0;
+          RealtimeLogger.info("Client", "WebSocket HTTP 101 upgrade confirmed. Channel SUBSCRIBED.");
           this.setStatus("connected");
           this.startHeartbeat();
           this.startDedupCleanup();
         } else if (status === "CLOSED") {
+          RealtimeLogger.warn("Client", "WebSocket channel CLOSED.");
           this.setStatus("disconnected");
           this.scheduleReconnect();
         } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
           const error = err ? new Error(String(err)) : new Error(`Realtime channel error: ${status}`);
+          RealtimeLogger.error("Client", `WebSocket status error: ${status}`, error);
           this.setStatus("error", error);
           this.scheduleReconnect();
         }
       });
     } catch (err: any) {
       this.isInitializing = false;
-      this.setStatus("error", err instanceof Error ? err : new Error(String(err)));
+      const errorObj = err instanceof Error ? err : new Error(String(err));
+      RealtimeLogger.error("Client", "Failed during channel connection attempt", errorObj);
+      this.setStatus("error", errorObj);
       this.scheduleReconnect();
     }
   }
@@ -119,18 +128,23 @@ class RealtimeClient {
     return this.channel;
   }
 
+  /**
+   * Deterministic fingerprint deduplication to guarantee exact-once event execution
+   */
   public isDuplicateEvent(payload: PostgresPayload): boolean {
     const timestamp = payload.commit_timestamp || Date.now().toString();
-    const eventKey = `${payload.table}:${payload.eventType}:${payload.new?.id || payload.old?.id || timestamp}`;
+    const entityId = payload.new?.id || payload.old?.id || timestamp;
+    const eventSignature = `${payload.schema}:${payload.table}:${payload.eventType}:${entityId}:${timestamp}`;
 
     const now = Date.now();
-    const existing = this.processedEvents.get(eventKey);
+    const existing = this.processedEvents.get(eventSignature);
 
     if (existing && now - existing < this.DEDUP_WINDOW_MS) {
+      RealtimeLogger.debug("Deduplication", `Duplicate event rejected: ${eventSignature}`);
       return true;
     }
 
-    this.processedEvents.set(eventKey, now);
+    this.processedEvents.set(eventSignature, now);
     return false;
   }
 
@@ -143,20 +157,19 @@ class RealtimeClient {
           this.processedEvents.delete(key);
         }
       });
-    }, 10000);
+    }, 15000);
   }
 
   private startHeartbeat() {
     this.stopHeartbeat();
     this.heartbeatInterval = setInterval(() => {
       if (this.status === "connected" && this.channel) {
-        // Send a lightweight ping over the single channel
         this.channel.send({
           type: "broadcast",
           event: "ping",
           payload: { timestamp: Date.now() },
-        }).catch(() => {
-          // Silent catch for heartbeat ping errors
+        }).catch((err) => {
+          RealtimeLogger.debug("Heartbeat", "Ping failed silently", err);
         });
       }
     }, 25000);
@@ -174,13 +187,19 @@ class RealtimeClient {
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
 
     if (this.retryCount >= this.maxRetries) {
+      RealtimeLogger.error("Client", `Max retries (${this.maxRetries}) reached. Stopping auto-reconnect.`);
       this.setStatus("error", new Error("Max connection retries exceeded. Manual reconnect required."));
       return;
     }
 
     this.setStatus("reconnecting");
-    const backoffMs = Math.min(1000 * Math.pow(2, this.retryCount) + Math.random() * 1000, 30000);
+    // Exponential backoff + randomized jitter
+    const baseBackoff = Math.min(1000 * Math.pow(2, this.retryCount), 30000);
+    const jitter = Math.floor(Math.random() * 1000);
+    const backoffMs = baseBackoff + jitter;
     this.retryCount++;
+
+    RealtimeLogger.info("Client", `Scheduling reconnect attempt #${this.retryCount} in ${backoffMs}ms`);
 
     this.reconnectTimeout = setTimeout(() => {
       this.connect();
@@ -188,22 +207,35 @@ class RealtimeClient {
   }
 
   public reconnect(): void {
+    RealtimeLogger.info("Client", "Manual reconnect requested.");
     this.retryCount = 0;
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
     this.connect();
   }
 
   private handleOnline = () => {
+    RealtimeLogger.info("Client", "Network online event detected.");
     if (this.status !== "connected") {
       this.reconnect();
     }
   };
 
   private handleOffline = () => {
+    RealtimeLogger.warn("Client", "Network offline event detected.");
     this.setStatus("disconnected", new Error("Network connection offline"));
   };
 
+  private handleVisibilityChange = () => {
+    if (document.visibilityState === "visible") {
+      RealtimeLogger.info("Client", "Browser tab visible. Checking realtime health.");
+      if (this.status === "disconnected" || this.status === "error") {
+        this.reconnect();
+      }
+    }
+  };
+
   public disconnect(): void {
+    RealtimeLogger.info("Client", "Disconnecting realtime client.");
     this.stopHeartbeat();
     if (this.dedupCleanupInterval) {
       clearInterval(this.dedupCleanupInterval);
@@ -227,6 +259,7 @@ class RealtimeClient {
     if (typeof window !== "undefined") {
       window.removeEventListener("online", this.handleOnline);
       window.removeEventListener("offline", this.handleOffline);
+      document.removeEventListener("visibilitychange", this.handleVisibilityChange);
     }
     this.statusListeners.clear();
     RealtimeClient.instance = null;
