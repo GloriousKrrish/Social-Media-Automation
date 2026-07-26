@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "installCommand": "cd socialpilot-ai && npm install",
+  "buildCommand": "cd socialpilot-ai && npm run build",
+  "outputDirectory": "socialpilot-ai/.next"
+}
