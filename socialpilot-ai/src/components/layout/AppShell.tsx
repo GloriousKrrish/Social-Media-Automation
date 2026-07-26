@@ -16,18 +16,11 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
   const { sidebarCollapsed } = useUIStore();
 
   const urlSegment = pathname ? pathname.replace(/^\//, "") : "";
-  const [activePage, setActivePage] = useState(urlSegment || "dashboard");
+  const activePage = urlSegment || "dashboard";
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const sidebarWidth = sidebarCollapsed ? 72 : 260;
 
-  useEffect(() => {
-    if (urlSegment && urlSegment !== activePage) {
-      setActivePage(urlSegment);
-    }
-  }, [urlSegment]);
-
   const handleNavigate = (page: string) => {
-    setActivePage(page);
     router.push(`/${page}`);
   };
 

@@ -44,6 +44,8 @@ const pageBreadcrumbs: Record<string, string[]> = {
   integrations: ["System", "Integrations"],
   billing: ["System", "Billing & Subscriptions"],
   settings: ["System", "General Settings"],
+  campaigns: ["Marketing", "Active Campaigns"],
+  placeholder: ["System", "Placeholder View"],
 };
 
 export default function TopNav({ sidebarWidth, activePage, onOpenCommandPalette }: TopNavProps) {
