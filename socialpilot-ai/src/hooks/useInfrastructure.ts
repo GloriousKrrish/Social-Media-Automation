@@ -76,6 +76,9 @@ export function useWorkspaces() {
   return useQuery({
     queryKey: ["workspaces"],
     queryFn: () => apiClient.get<WorkspaceItem[]>("/workspaces"),
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    gcTime: 1000 * 60 * 15,
+    retry: 2,
   });
 }
 
@@ -83,6 +86,9 @@ export function useNotifications() {
   return useQuery({
     queryKey: ["notifications"],
     queryFn: () => apiClient.get<NotificationItem[]>("/notifications"),
+    staleTime: 1000 * 30, // 30 seconds
+    gcTime: 1000 * 60 * 5,
+    retry: 2,
   });
 }
 
@@ -90,6 +96,9 @@ export function useAuditLogs() {
   return useQuery({
     queryKey: ["audit_logs"],
     queryFn: () => apiClient.get<AuditLogItem[]>("/audit-logs"),
+    staleTime: 1000 * 60, // 1 minute
+    gcTime: 1000 * 60 * 10,
+    retry: 2,
   });
 }
 
@@ -97,6 +106,9 @@ export function useApiKeys() {
   return useQuery({
     queryKey: ["api_keys"],
     queryFn: () => apiClient.get<ApiKeyItem[]>("/api-keys"),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    gcTime: 1000 * 60 * 10,
+    retry: 2,
   });
 }
 
@@ -104,6 +116,9 @@ export function useDashboardStats() {
   return useQuery({
     queryKey: ["dashboard_stats"],
     queryFn: () => apiClient.get<DashboardStats>("/dashboard/stats"),
+    staleTime: 1000 * 30, // 30 seconds
+    gcTime: 1000 * 60 * 5,
+    retry: 2,
   });
 }
 
@@ -111,6 +126,9 @@ export function useUserProfile() {
   return useQuery({
     queryKey: ["user_profile"],
     queryFn: () => apiClient.get<UserProfileData>("/users/me"),
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    gcTime: 1000 * 60 * 30,
+    retry: 1,
   });
 }
 
@@ -118,6 +136,9 @@ export function useAppSettings() {
   return useQuery({
     queryKey: ["app_settings"],
     queryFn: () => apiClient.get<AppSettingsData>("/settings"),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15,
+    retry: 2,
   });
 }
 
@@ -125,7 +146,9 @@ export function useGlobalSearch(query: string) {
   return useQuery({
     queryKey: ["global_search", query],
     queryFn: () => apiClient.get<any[]>(`/search?q=${encodeURIComponent(query)}`),
-    enabled: query.length > 0,
+    enabled: query.trim().length > 0,
+    staleTime: 1000 * 10, // 10 seconds
+    gcTime: 1000 * 60 * 2,
   });
 }
 
@@ -135,6 +158,7 @@ export function useCreateApiKey() {
     mutationFn: (name: string) => apiClient.post<ApiKeyItem>("/api-keys", { name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["api_keys"] });
+      queryClient.invalidateQueries({ queryKey: ["audit_logs"] });
     },
   });
 }

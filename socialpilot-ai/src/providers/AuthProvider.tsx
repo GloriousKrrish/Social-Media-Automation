@@ -134,9 +134,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(profile);
           localStorage.setItem("socialpilot_user_profile", JSON.stringify(profile));
         })
-        .catch(() => {
-          if (!cachedUser) {
+        .catch((err: any) => {
+          if (err?.status === 401 || err?.status === 403) {
             apiClient.setToken(null);
+            setUser(null);
+            localStorage.removeItem("socialpilot_access_token");
+            localStorage.removeItem("socialpilot_user_profile");
           }
         })
         .finally(() => {
