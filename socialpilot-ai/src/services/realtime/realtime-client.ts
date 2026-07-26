@@ -6,6 +6,7 @@ import { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { ConnectionStatus, PostgresPayload } from "./types";
 import { RealtimeLogger } from "./logger";
+import { realtimeMetrics } from "./metrics";
 
 export type StatusListener = (status: ConnectionStatus, error?: Error | null) => void;
 
@@ -62,6 +63,13 @@ class RealtimeClient {
   private setStatus(newStatus: ConnectionStatus, error: Error | null = null) {
     if (this.status === newStatus && this.lastError === error) return;
     RealtimeLogger.info("Client", `Status transition: ${this.status} -> ${newStatus}`, error ? { error: error.message } : undefined);
+    
+    if (newStatus === "connected") {
+      realtimeMetrics.recordConnectionEstablished();
+    } else if (newStatus === "disconnected" || newStatus === "error") {
+      realtimeMetrics.recordConnectionLost();
+    }
+
     this.status = newStatus;
     this.lastError = error;
     this.statusListeners.forEach((fn) => fn(newStatus, error));
@@ -141,6 +149,7 @@ class RealtimeClient {
 
     if (existing && now - existing < this.DEDUP_WINDOW_MS) {
       RealtimeLogger.debug("Deduplication", `Duplicate event rejected: ${eventSignature}`);
+      realtimeMetrics.recordDuplicateEventIgnored();
       return true;
     }
 
@@ -164,10 +173,14 @@ class RealtimeClient {
     this.stopHeartbeat();
     this.heartbeatInterval = setInterval(() => {
       if (this.status === "connected" && this.channel) {
+        const pingStart = Date.now();
         this.channel.send({
           type: "broadcast",
           event: "ping",
-          payload: { timestamp: Date.now() },
+          payload: { timestamp: pingStart },
+        }).then(() => {
+          const latency = Date.now() - pingStart;
+          realtimeMetrics.recordHeartbeatLatency(latency);
         }).catch((err) => {
           RealtimeLogger.debug("Heartbeat", "Ping failed silently", err);
         });
@@ -199,6 +212,7 @@ class RealtimeClient {
     const backoffMs = baseBackoff + jitter;
     this.retryCount++;
 
+    realtimeMetrics.recordReconnectAttempt(backoffMs);
     RealtimeLogger.info("Client", `Scheduling reconnect attempt #${this.retryCount} in ${backoffMs}ms`);
 
     this.reconnectTimeout = setTimeout(() => {

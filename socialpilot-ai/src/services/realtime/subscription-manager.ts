@@ -5,6 +5,7 @@
 import { realtimeClient } from "./realtime-client";
 import { TableName, PostgresEventType, RealtimeEventHandler, PostgresPayload } from "./types";
 import { RealtimeLogger } from "./logger";
+import { realtimeMetrics } from "./metrics";
 
 type SubscriptionKey = string;
 
@@ -40,13 +41,12 @@ class SubscriptionManager {
 
     const handlers = this.handlersMap.get(key)!;
     
-    // React 18/19 StrictMode safety check
     if (!handlers.has(handler)) {
       handlers.add(handler);
+      realtimeMetrics.setSubscriptionCount(this.getActiveSubscriptionsCount());
       RealtimeLogger.debug("SubscriptionManager", `Subscribed listener to ${key}. Total listeners for key: ${handlers.size}`);
     }
 
-    // Ensure postgres_changes binding attached to single channel for this table
     this.ensureTableBinding(table, schema);
 
     return () => {
@@ -65,6 +65,7 @@ class SubscriptionManager {
 
     if (handlers) {
       handlers.delete(handler);
+      realtimeMetrics.setSubscriptionCount(this.getActiveSubscriptionsCount());
       RealtimeLogger.debug("SubscriptionManager", `Unsubscribed listener from ${key}. Remaining: ${handlers.size}`);
       if (handlers.size === 0) {
         this.handlersMap.delete(key);
@@ -92,6 +93,8 @@ class SubscriptionManager {
   }
 
   public handleIncomingPayload(payload: PostgresPayload): void {
+    const startTime = performance.now();
+
     if (realtimeClient.isDuplicateEvent(payload)) {
       return;
     }
@@ -123,6 +126,9 @@ class SubscriptionManager {
         }
       });
     }
+
+    const processingTime = performance.now() - startTime;
+    realtimeMetrics.recordEventProcessed(processingTime);
   }
 
   public getActiveSubscriptionsCount(): number {
@@ -137,6 +143,7 @@ class SubscriptionManager {
     RealtimeLogger.info("SubscriptionManager", "Clearing all active table handlers and bindings.");
     this.handlersMap.clear();
     this.boundTables.clear();
+    realtimeMetrics.setSubscriptionCount(0);
   }
 }
 

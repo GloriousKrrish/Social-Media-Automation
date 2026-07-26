@@ -6,6 +6,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { PostgresPayload } from "./types";
 import { RealtimeLogger } from "./logger";
+import { realtimeMetrics } from "./metrics";
 import {
   NotificationItem,
   WorkspaceItem,
@@ -31,6 +32,7 @@ export class CacheUpdater {
   public handleNotificationEvent(queryClient: QueryClient, payload: PostgresPayload<NotificationItem>) {
     const { eventType, new: newItem, old: oldItem } = payload;
     RealtimeLogger.debug("CacheUpdater", `Notification event: ${eventType}`, { id: newItem?.id || oldItem?.id });
+    realtimeMetrics.recordCacheUpdate();
 
     queryClient.setQueryData<NotificationItem[]>(["notifications"], (oldData) => {
       const currentList = oldData ? [...oldData] : [];
@@ -60,6 +62,7 @@ export class CacheUpdater {
   public handleDashboardStatsEvent(queryClient: QueryClient, payload: PostgresPayload<Partial<DashboardStats>>) {
     const { new: newStats } = payload;
     RealtimeLogger.debug("CacheUpdater", "Updating dashboard_stats cache");
+    realtimeMetrics.recordCacheUpdate();
 
     queryClient.setQueryData<DashboardStats>(["dashboard_stats"], (oldStats) => {
       if (!oldStats) return newStats as DashboardStats;
@@ -75,6 +78,7 @@ export class CacheUpdater {
   public handleWorkspaceEvent(queryClient: QueryClient, payload: PostgresPayload<WorkspaceItem>) {
     const { eventType, new: newItem, old: oldItem } = payload;
     RealtimeLogger.debug("CacheUpdater", `Workspace event: ${eventType}`, { id: newItem?.id || oldItem?.id });
+    realtimeMetrics.recordCacheUpdate();
 
     queryClient.setQueryData<WorkspaceItem[]>(["workspaces"], (oldData) => {
       const currentList = oldData ? [...oldData] : [];
@@ -105,6 +109,7 @@ export class CacheUpdater {
   public handleSettingsEvent(queryClient: QueryClient, payload: PostgresPayload<Partial<AppSettingsData>>) {
     const { new: newSettings } = payload;
     RealtimeLogger.debug("CacheUpdater", "Updating app_settings cache", newSettings);
+    realtimeMetrics.recordCacheUpdate();
 
     queryClient.setQueryData<AppSettingsData>(["app_settings"], (oldSettings) => {
       if (!oldSettings) return newSettings as AppSettingsData;
@@ -119,6 +124,7 @@ export class CacheUpdater {
   public handleApiKeyEvent(queryClient: QueryClient, payload: PostgresPayload<ApiKeyItem>) {
     const { eventType, new: newItem, old: oldItem } = payload;
     RealtimeLogger.debug("CacheUpdater", `API Key event: ${eventType}`, { id: newItem?.id || oldItem?.id });
+    realtimeMetrics.recordCacheUpdate();
 
     queryClient.setQueryData<ApiKeyItem[]>(["api_keys"], (oldData) => {
       const currentList = oldData ? [...oldData] : [];
@@ -150,6 +156,7 @@ export class CacheUpdater {
 
     if (eventType === "INSERT" && newItem?.id) {
       RealtimeLogger.info("CacheUpdater", `Streamed audit log: ${newItem.action}`);
+      realtimeMetrics.recordCacheUpdate();
       queryClient.setQueryData<AuditLogItem[]>(["audit_logs"], (oldData) => {
         const currentList = oldData ? [...oldData] : [];
         if (!currentList.some((log) => log.id === newItem.id)) {
