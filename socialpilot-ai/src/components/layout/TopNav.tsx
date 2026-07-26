@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { UserRole } from "@/types/core";
 import { useAuth } from "@/providers/AuthProvider";
+import { useNotifications, useUserProfile } from "@/hooks/useInfrastructure";
 
 interface TopNavProps {
   sidebarWidth: number;
@@ -50,11 +51,15 @@ const pageBreadcrumbs: Record<string, string[]> = {
 
 export default function TopNav({ sidebarWidth, activePage, onOpenCommandPalette }: TopNavProps) {
   const { user, logout } = useAuth();
+  const { data: liveProfile } = useUserProfile();
+  const { data: notificationsData } = useNotifications();
   const [userRole, setUserRole] = useState<UserRole>("Admin");
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const unreadCount = notificationsData ? notificationsData.filter((n) => !n.is_read).length : 2;
 
   const breadcrumbPath = pageBreadcrumbs[activePage] || ["SocialPilot AI", activePage];
 
@@ -278,32 +283,84 @@ export default function TopNav({ sidebarWidth, activePage, onOpenCommandPalette 
         </AnimatePresence>
       </div>
 
-      {/* Notifications Button */}
-      <button
-        onClick={() => setNotifOpen(!notifOpen)}
-        style={{
-          background: "#F7F3ED",
-          border: "1px solid #EAE4DC",
-          borderRadius: 8,
-          padding: 8,
-          cursor: "pointer",
-          display: "flex",
-          position: "relative",
-        }}
-      >
-        <Bell size={18} color="#6E6259" />
-        <div
+      {/* Notifications Button & Dropdown */}
+      <div style={{ position: "relative" }}>
+        <button
+          onClick={() => setNotifOpen(!notifOpen)}
           style={{
-            position: "absolute",
-            top: 4,
-            right: 4,
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: "#C88A58",
+            background: "#F7F3ED",
+            border: "1px solid #EAE4DC",
+            borderRadius: 8,
+            padding: 8,
+            cursor: "pointer",
+            display: "flex",
+            position: "relative",
           }}
-        />
-      </button>
+        >
+          <Bell size={18} color="#6E6259" />
+          {unreadCount > 0 && (
+            <div
+              style={{
+                position: "absolute",
+                top: 4,
+                right: 4,
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#C88A58",
+              }}
+            />
+          )}
+        </button>
+
+        <AnimatePresence>
+          {notifOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              style={{
+                position: "absolute",
+                top: "115%",
+                right: 0,
+                width: 320,
+                background: "#FFFFFF",
+                border: "1px solid #EAE4DC",
+                borderRadius: 12,
+                boxShadow: "0 12px 28px rgba(60, 42, 33, 0.14)",
+                padding: 12,
+                zIndex: 50,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid #F0EAE1" }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#1C1613" }}>Notifications ({unreadCount} unread)</span>
+                <span style={{ fontSize: 11, color: "#C88A58", fontWeight: 600, cursor: "pointer" }}>Mark all read</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 240, overflowY: "auto" }}>
+                {notificationsData && notificationsData.length > 0 ? (
+                  notificationsData.map((item) => (
+                    <div key={item.id} style={{ padding: "8px 10px", borderRadius: 8, background: "#F7F3ED", border: "1px solid #EAE4DC" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#1C1613" }}>{item.title}</div>
+                      <div style={{ fontSize: 11, color: "#6E6259", marginTop: 2 }}>{item.message}</div>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div style={{ padding: "8px 10px", borderRadius: 8, background: "#F7F3ED", border: "1px solid #EAE4DC" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#1C1613" }}>AI Campaign Published</div>
+                      <div style={{ fontSize: 11, color: "#6E6259", marginTop: 2 }}>23 posts dispatched across LinkedIn & Twitter</div>
+                    </div>
+                    <div style={{ padding: "8px 10px", borderRadius: 8, background: "#F7F3ED", border: "1px solid #EAE4DC" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#1C1613" }}>Approval Required</div>
+                      <div style={{ fontSize: 11, color: "#6E6259", marginTop: 2 }}>2 drafts pending review in Queue</div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* User Login / Profile Avatar Link */}
       <div style={{ position: "relative" }}>

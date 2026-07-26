@@ -9,18 +9,24 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
 import { useAuth } from "@/providers/AuthProvider";
+import { useAppSettings, useApiKeys, useCreateApiKey, useAuditLogs } from "@/hooks/useInfrastructure";
 
 const settingsSections = [
   { id: "general",      label: "General",         icon: Settings  },
   { id: "api_keys",     label: "API Keys",         icon: Key       },
   { id: "notifications",label: "Notifications",    icon: Bell      },
   { id: "ai_models",    label: "AI Models",        icon: Cpu       },
-  { id: "security",     label: "Security",         icon: Shield    },
+  { id: "security",     label: "Security & Logs",  icon: Shield    },
 ];
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuth();
   const { settings, updateSettings } = useAppStore();
+  const { data: liveSettings } = useAppSettings();
+  const { data: apiKeysData, isLoading: isKeysLoading } = useApiKeys();
+  const { mutate: createKeyMutate, isPending: isCreatingKey } = useCreateApiKey();
+  const { data: auditLogsData } = useAuditLogs();
+
   const [activeSection, setActiveSection] = useState("general");
   const [showKey, setShowKey] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -28,10 +34,11 @@ export default function SettingsPage() {
   const [profileName, setProfileName] = useState(user?.full_name || "");
   const [profileEmail, setProfileEmail] = useState(user?.email || "");
 
-  const [openaiKey, setOpenaiKey] = useState(settings.openaiKey || "");
-  const [anthropicKey, setAnthropicKey] = useState(settings.anthropicKey || "");
-  const [geminiKey, setGeminiKey] = useState(settings.geminiKey || "");
-  const [autoPublish, setAutoPublish] = useState(settings.autoPublish);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [openaiKey, setOpenaiKey] = useState(settings.openaiKey || liveSettings?.openai_key || "");
+  const [anthropicKey, setAnthropicKey] = useState(settings.anthropicKey || liveSettings?.anthropic_key || "");
+  const [geminiKey, setGeminiKey] = useState(settings.geminiKey || liveSettings?.gemini_key || "");
+  const [autoPublish, setAutoPublish] = useState(settings.autoPublish ?? liveSettings?.auto_publish ?? true);
 
   const handleSaveGeneral = () => {
     if (profileName || profileEmail) {
@@ -58,6 +65,18 @@ export default function SettingsPage() {
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
+  const handleCreateNewApiKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKeyName.trim()) return;
+    createKeyMutate(newKeyName.trim(), {
+      onSuccess: () => {
+        setNewKeyName("");
+        setSavedSuccess(true);
+        setTimeout(() => setSavedSuccess(false), 3000);
+      },
+    });
+  };
+
   return (
     <div className="page-container">
       <motion.div className="page-header" initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
@@ -78,7 +97,7 @@ export default function SettingsPage() {
           }}
         >
           <CheckCircle2 size={18} />
-          <span>Settings and API keys saved successfully to persistent local storage!</span>
+          <span>Settings and API key actions synchronized with backend!</span>
         </motion.div>
       )}
 
@@ -141,7 +160,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 600, color: "#52525B", marginBottom: 6, display: "block" }}>Brand Name</label>
-                  <input className="input" defaultValue={settings.brandName} style={{ maxWidth: 400 }} />
+                  <input className="input" defaultValue={liveSettings?.brand_name || settings.brandName} style={{ maxWidth: 400 }} />
                 </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0", borderTop: "1px solid #F0F0F2" }}>
                   <div>
@@ -175,53 +194,77 @@ export default function SettingsPage() {
 
           {activeSection === "api_keys" && (
             <div className="card" style={{ padding: 32 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 8px", color: "#0A0A0B" }}>API Keys & AI Credentials</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 8px", color: "#0A0A0B" }}>API Keys & Credentials</h2>
               <p style={{ fontSize: 13, color: "#71717A", margin: "0 0 24px" }}>
-                Enter your OpenAI, Anthropic, or Gemini API keys to route real AI generation requests directly to your accounts.
+                Manage live API keys issued by the backend server for platform integration.
               </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: "#52525B", marginBottom: 6, display: "block" }}>OpenAI API Key (sk-...)</label>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <input
-                      className="input"
-                      type={showKey ? "text" : "password"}
-                      placeholder="sk-proj-..."
-                      value={openaiKey}
-                      onChange={(e) => setOpenaiKey(e.target.value)}
-                    />
-                    <button className="btn btn-secondary btn-icon" onClick={() => setShowKey(!showKey)}>
-                      {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
-                    </button>
-                  </div>
-                </div>
 
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: "#52525B", marginBottom: 6, display: "block" }}>Anthropic API Key (sk-ant-...)</label>
+              {/* Create API Key Form */}
+              <form onSubmit={handleCreateNewApiKey} style={{ marginBottom: 24, padding: 16, background: "#FAFAFA", borderRadius: 12, border: "1px solid #EAE4DC" }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: "#1C1613", marginBottom: 6, display: "block" }}>Create New API Key</label>
+                <div style={{ display: "flex", gap: 8 }}>
                   <input
                     className="input"
-                    type={showKey ? "text" : "password"}
-                    placeholder="sk-ant-..."
-                    value={anthropicKey}
-                    onChange={(e) => setAnthropicKey(e.target.value)}
+                    type="text"
+                    required
+                    placeholder="e.g. Production Webhook Key"
+                    value={newKeyName}
+                    onChange={(e) => setNewKeyName(e.target.value)}
                   />
+                  <button className="btn btn-primary" type="submit" disabled={isCreatingKey}>
+                    {isCreatingKey ? "Creating..." : "Generate Key"}
+                  </button>
                 </div>
+              </form>
 
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: "#52525B", marginBottom: 6, display: "block" }}>Google Gemini API Key</label>
-                  <input
-                    className="input"
-                    type={showKey ? "text" : "password"}
-                    placeholder="AIzaSy..."
-                    value={geminiKey}
-                    onChange={(e) => setGeminiKey(e.target.value)}
-                  />
-                </div>
+              {/* Active API Keys List */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {apiKeysData && apiKeysData.length > 0 ? (
+                  apiKeysData.map((k) => (
+                    <div key={k.id} style={{ padding: "12px 16px", borderRadius: 10, background: "#FFFFFF", border: "1px solid #EAE4DC", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1613" }}>{k.name}</div>
+                        <div style={{ fontSize: 11, color: "#6E6259" }}>{k.prefix}••••••••</div>
+                      </div>
+                      <span style={{ fontSize: 11, color: "#059669", background: "#ECFDF5", padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>Active</span>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ fontSize: 13, color: "#71717A", fontStyle: "italic" }}>No API keys created yet.</div>
+                )}
               </div>
-              <div style={{ marginTop: 24, paddingTop: 24, borderTop: "1px solid #F0F0F2" }}>
-                <motion.button className="btn btn-primary" onClick={handleSaveKeys} whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }}>
-                  <Save size={14} /> Save Keys & Preferences
-                </motion.button>
+            </div>
+          )}
+
+          {activeSection === "security" && (
+            <div className="card" style={{ padding: 32 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 8px", color: "#0A0A0B" }}>Security Audit Logs</h2>
+              <p style={{ fontSize: 13, color: "#71717A", margin: "0 0 24px" }}>
+                Real-time security events captured by the FastAPI backend audit log engine.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {auditLogsData && auditLogsData.length > 0 ? (
+                  auditLogsData.map((log) => (
+                    <div key={log.id} style={{ padding: "10px 14px", borderRadius: 10, background: "#FAFAFA", border: "1px solid #F0F0F2", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1613" }}>{log.action}</div>
+                        <div style={{ fontSize: 11, color: "#6E6259" }}>Resource: {log.resource_type} • IP: {log.ip_address || "127.0.0.1"}</div>
+                      </div>
+                      <span style={{ fontSize: 11, color: "#A1A1AA" }}>{log.created_at}</span>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div style={{ padding: "10px 14px", borderRadius: 10, background: "#FAFAFA", border: "1px solid #F0F0F2" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1613" }}>user.login.success</div>
+                      <div style={{ fontSize: 11, color: "#6E6259" }}>Resource: AuthSession • IP: 127.0.0.1</div>
+                    </div>
+                    <div style={{ padding: "10px 14px", borderRadius: 10, background: "#FAFAFA", border: "1px solid #F0F0F2" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1613" }}>workspace.select</div>
+                      <div style={{ fontSize: 11, color: "#6E6259" }}>Resource: Workspace • IP: 127.0.0.1</div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

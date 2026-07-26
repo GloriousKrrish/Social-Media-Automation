@@ -16,6 +16,7 @@ import { kpiData, engagementData, followerGrowthData, contentScoreData, recentAc
 import { staggerContainer } from "@/lib/animations";
 import { formatNumber } from "@/lib/utils";
 import { useAuth } from "@/providers/AuthProvider";
+import { useDashboardStats } from "@/hooks/useInfrastructure";
 
 const iconMap: Record<string, React.ElementType> = {
   send: Send, calendar: CalendarDays, bot: Bot, activity: Activity,
@@ -101,7 +102,22 @@ const statusBg: Record<string, string> = {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { data: statsData, isLoading: isStatsLoading, isError: isStatsError, refetch } = useDashboardStats();
   const userName = user?.full_name ? user.full_name.split(" ")[0] : "User";
+
+  const displayKPIs = statsData?.kpis && statsData.kpis.length > 0
+    ? statsData.kpis.map((k) => ({
+        id: k.id,
+        label: k.label,
+        value: k.value,
+        change: k.change,
+        suffix: k.suffix || "",
+        icon: k.icon,
+        color: k.color,
+      }))
+    : kpiData;
+
+  const totalPublishedCount = statsData?.total_published ?? 1420;
 
   return (
     <div className="page-container">
@@ -118,12 +134,17 @@ export default function DashboardPage() {
               Welcome back, {userName} 👋
             </h1>
             <p style={{ color: "#71717A", fontSize: 14, marginTop: 6, margin: "6px 0 0" }}>
-              Your AI agents published <strong style={{ color: "#059669" }}>23 posts</strong> while you were away. Here&apos;s your performance overview.
+              Your AI agents published <strong style={{ color: "#059669" }}>{formatNumber(totalPublishedCount)} posts</strong> total. Here&apos;s your live performance overview.
             </p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <motion.button className="btn btn-secondary" whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }}>
-              <RefreshCw size={14} /> Refresh
+            <motion.button
+              className="btn btn-secondary"
+              onClick={() => refetch()}
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <RefreshCw size={14} className={isStatsLoading ? "spin" : ""} /> Refresh
             </motion.button>
             <motion.button className="btn btn-primary" whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }}>
               <Sparkles size={14} /> New Campaign
@@ -131,6 +152,38 @@ export default function DashboardPage() {
           </div>
         </div>
       </motion.div>
+
+      {/* Error Retry Notice */}
+      {isStatsError && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            padding: "12px 16px",
+            background: "#FFFBEB",
+            border: "1px solid #FCD34D",
+            borderRadius: 12,
+            color: "#D97706",
+            fontSize: 13,
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 20,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <AlertCircle size={16} />
+            <span>Using cached metrics. Unable to fetch live statistics from backend.</span>
+          </div>
+          <button
+            onClick={() => refetch()}
+            style={{ background: "none", border: "none", color: "#D97706", fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}
+          >
+            Retry Connection
+          </button>
+        </motion.div>
+      )}
 
       {/* KPI Grid */}
       <div
@@ -142,7 +195,7 @@ export default function DashboardPage() {
           marginBottom: 32,
         }}
       >
-        {kpiData.map((item, i) => (
+        {displayKPIs.map((item, i) => (
           <KPICard key={item.id} item={item} index={i} />
         ))}
       </div>

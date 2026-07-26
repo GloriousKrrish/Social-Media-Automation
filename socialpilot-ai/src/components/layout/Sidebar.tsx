@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { Workspace } from "@/types/core";
 import { useAuth } from "@/providers/AuthProvider";
+import { useWorkspaces } from "@/hooks/useInfrastructure";
 
 const workspacesList: Workspace[] = [
   { id: "ws-1", name: "Acme Corp SaaS", logo: "🚀", plan: "Enterprise", role: "Admin", membersCount: 14 },
@@ -80,9 +81,28 @@ interface SidebarProps {
 
 export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
   const { user } = useAuth();
+  const { data: workspacesData } = useWorkspaces();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
-  const [activeWorkspace, setActiveWorkspace] = useState<Workspace>(workspacesList[0]);
+
+  const currentWorkspacesList: Workspace[] = workspacesData && workspacesData.length > 0
+    ? workspacesData.map((w, idx) => ({
+        id: w.id,
+        name: w.name,
+        logo: idx === 0 ? "🚀" : idx === 1 ? "🌐" : "🎨",
+        plan: "Enterprise",
+        role: "Admin",
+        membersCount: w.members_count || 1,
+      }))
+    : workspacesList;
+
+  const [activeWorkspace, setActiveWorkspace] = useState<Workspace>(currentWorkspacesList[0]);
   const [wsDropdownOpen, setWsDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (currentWorkspacesList.length > 0) {
+      setActiveWorkspace(currentWorkspacesList[0]);
+    }
+  }, [workspacesData]);
 
   // Cmd + B keyboard shortcut to toggle sidebar collapse
   useEffect(() => {
@@ -215,7 +235,7 @@ export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
                   <div style={{ fontSize: 10, fontWeight: 700, color: "#A3968C", padding: "6px 8px", textTransform: "uppercase" }}>
                     Select Organization
                   </div>
-                  {workspacesList.map((ws) => (
+                  {currentWorkspacesList.map((ws) => (
                     <div
                       key={ws.id}
                       onClick={() => {

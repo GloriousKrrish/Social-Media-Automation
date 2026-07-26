@@ -19,6 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { CommandPaletteItem } from "@/types/core";
+import { useGlobalSearch } from "@/hooks/useInfrastructure";
 
 const commandItems: CommandPaletteItem[] = [
   // Agents
@@ -51,6 +52,7 @@ interface CommandPaletteProps {
 export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const { data: liveSearchResults } = useGlobalSearch(query);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
