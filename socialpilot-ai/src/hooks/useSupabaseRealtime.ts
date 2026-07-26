@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
+import { subscriptionManager, PostgresPayload, PostgresEventType } from "@/lib/realtime";
 
 interface RealtimeOptions {
   table?: string;
   schema?: string;
-  event?: "INSERT" | "UPDATE" | "DELETE" | "*";
+  event?: PostgresEventType;
   queryKeysToInvalidate?: string[][];
   onPayload?: (payload: any) => void;
 }
@@ -16,39 +16,34 @@ export function useSupabaseRealtime({
   table = "notifications",
   schema = "public",
   event = "*",
-  queryKeysToInvalidate = [["notifications"], ["dashboard"]],
+  queryKeysToInvalidate = [["notifications"], ["dashboard_stats"]],
   onPayload,
 }: RealtimeOptions = {}) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) return;
-
-    const channelName = `realtime_${table}_${event}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes" as any,
-        {
-          event,
-          schema,
-          table,
-        },
-        (payload) => {
-          if (onPayload) {
-            onPayload(payload);
-          }
-          queryKeysToInvalidate.forEach((key) => {
-            queryClient.invalidateQueries({ queryKey: key });
-          });
-        }
-      )
-      .subscribe();
-
-    const client = supabase;
-    return () => {
-      client.removeChannel(channel);
+    const handlePayload = (payload: PostgresPayload) => {
+      if (onPayload) {
+        onPayload(payload);
+      }
+      if (queryKeysToInvalidate && queryKeysToInvalidate.length > 0) {
+        queryKeysToInvalidate.forEach((key) => {
+          queryClient.invalidateQueries({ queryKey: key });
+        });
+      }
     };
-  }, [table, schema, event, queryClient]);
+
+    const unsubscribe = subscriptionManager.subscribe(
+      table,
+      event,
+      handlePayload,
+      schema
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [table, schema, event, queryClient, onPayload]);
 }
+
 
