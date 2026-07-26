@@ -17,14 +17,12 @@ class AppSettingsSchema(BaseModel):
     gemini_key: Optional[str] = None
 
 
+from app.services.settings_service import SettingsService
+
+
 @router.get("", response_model=AppSettingsSchema)
 async def get_settings(db: AsyncSession = Depends(get_db)):
-    return AppSettingsSchema(
-        brand_name="SocialPilot AI",
-        timezone="UTC",
-        date_format="YYYY-MM-DD",
-        auto_publish=True,
-    )
+    return await SettingsService.get_settings()
 
 
 @router.put("", response_model=AppSettingsSchema)

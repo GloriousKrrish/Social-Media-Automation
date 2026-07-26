@@ -15,21 +15,9 @@ class NotificationSchema(BaseModel):
     is_read: bool
 
 
+from app.services.notification_service import NotificationService
+
+
 @router.get("", response_model=List[NotificationSchema])
 async def list_notifications(db: AsyncSession = Depends(get_db)):
-    return [
-        NotificationSchema(
-            id="notif-1",
-            title="Campaign Published",
-            message="AI Campaign #47 published to 6 accounts",
-            type="success",
-            is_read=False,
-        ),
-        NotificationSchema(
-            id="notif-2",
-            title="Trend Detected",
-            message="#AIProductivity trending +840% on Twitter",
-            type="info",
-            is_read=False,
-        ),
-    ]
+    return await NotificationService.get_notifications()

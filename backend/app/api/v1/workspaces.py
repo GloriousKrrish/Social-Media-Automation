@@ -20,24 +20,12 @@ class CreateWorkspaceSchema(BaseModel):
     organization_id: str
 
 
+from app.services.workspace_service import WorkspaceService
+
+
 @router.get("", response_model=List[WorkspaceSchema])
 async def list_workspaces(db: AsyncSession = Depends(get_db)):
-    return [
-        WorkspaceSchema(
-            id="ws-1",
-            name="Acme Corp SaaS",
-            slug="acme-saas",
-            organization_id="org-1",
-            members_count=14,
-        ),
-        WorkspaceSchema(
-            id="ws-2",
-            name="Global Marketing",
-            slug="global-marketing",
-            organization_id="org-1",
-            members_count=8,
-        ),
-    ]
+    return await WorkspaceService.get_workspaces()
 
 
 @router.post("", response_model=WorkspaceSchema, status_code=status.HTTP_201_CREATED)

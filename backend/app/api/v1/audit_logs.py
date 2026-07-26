@@ -17,16 +17,9 @@ class AuditLogSchema(BaseModel):
     created_at: str
 
 
+from app.services.audit_log_service import AuditLogService
+
+
 @router.get("", response_model=List[AuditLogSchema])
 async def list_audit_logs(db: AsyncSession = Depends(get_db)):
-    return [
-        AuditLogSchema(
-            id="audit-1",
-            actor_id="usr-101",
-            action="user:login",
-            resource_type="auth",
-            resource_id=None,
-            ip_address="127.0.0.1",
-            created_at="2026-07-24T12:00:00Z",
-        )
-    ]
+    return await AuditLogService.get_logs()
