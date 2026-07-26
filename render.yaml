@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: socialpilot-backend
+    env: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SQLALCHEMY_DATABASE_URI
+        fromDatabase:
+          name: socialpilot-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: socialpilot-redis
+          property: connectionString
+
+  - type: redis
+    name: socialpilot-redis
+    ipAllowList: []
+    plan: free
+
+databases:
+  - name: socialpilot-db
+    databaseName: socialpilot_db
+    user: postgres
+    plan: free

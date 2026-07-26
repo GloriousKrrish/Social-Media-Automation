@@ -8,6 +8,7 @@ import {
   AlertCircle, Check, ToggleLeft, CheckCircle2,
 } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
+import { useAuth } from "@/providers/AuthProvider";
 
 const settingsSections = [
   { id: "general",      label: "General",         icon: Settings  },
@@ -18,15 +19,33 @@ const settingsSections = [
 ];
 
 export default function SettingsPage() {
+  const { user, updateUser } = useAuth();
   const { settings, updateSettings } = useAppStore();
   const [activeSection, setActiveSection] = useState("general");
   const [showKey, setShowKey] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  const [profileName, setProfileName] = useState(user?.full_name || "");
+  const [profileEmail, setProfileEmail] = useState(user?.email || "");
+
   const [openaiKey, setOpenaiKey] = useState(settings.openaiKey || "");
   const [anthropicKey, setAnthropicKey] = useState(settings.anthropicKey || "");
   const [geminiKey, setGeminiKey] = useState(settings.geminiKey || "");
   const [autoPublish, setAutoPublish] = useState(settings.autoPublish);
+
+  const handleSaveGeneral = () => {
+    if (profileName || profileEmail) {
+      updateUser({
+        full_name: profileName,
+        email: profileEmail,
+      });
+    }
+    updateSettings({
+      autoPublish,
+    });
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 3000);
+  };
 
   const handleSaveKeys = () => {
     updateSettings({
@@ -98,8 +117,28 @@ export default function SettingsPage() {
         >
           {activeSection === "general" && (
             <div className="card" style={{ padding: 32 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 24px", color: "#0A0A0B" }}>General Preferences</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 24px", color: "#0A0A0B" }}>Account Profile & General Preferences</h2>
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: "#52525B", marginBottom: 6, display: "block" }}>Full Name</label>
+                  <input
+                    className="input"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    placeholder="e.g. John Doe"
+                    style={{ maxWidth: 400 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: "#52525B", marginBottom: 6, display: "block" }}>Work Email Address</label>
+                  <input
+                    className="input"
+                    value={profileEmail}
+                    onChange={(e) => setProfileEmail(e.target.value)}
+                    placeholder="john@company.com"
+                    style={{ maxWidth: 400 }}
+                  />
+                </div>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 600, color: "#52525B", marginBottom: 6, display: "block" }}>Brand Name</label>
                   <input className="input" defaultValue={settings.brandName} style={{ maxWidth: 400 }} />
@@ -127,8 +166,8 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div style={{ marginTop: 24, paddingTop: 24, borderTop: "1px solid #F0F0F2" }}>
-                <motion.button className="btn btn-primary" onClick={handleSaveKeys} whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }}>
-                  <Save size={14} /> Save Changes
+                <motion.button className="btn btn-primary" onClick={handleSaveGeneral} whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }}>
+                  <Save size={14} /> Save Profile & Preferences
                 </motion.button>
               </div>
             </div>

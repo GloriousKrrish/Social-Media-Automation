@@ -111,7 +111,7 @@ export default function LoginPage() {
           login(data.session.access_token, {
             id: data.user.id,
             email: data.user.email || email,
-            full_name: data.user.user_metadata?.full_name || "User",
+            full_name: data.user.user_metadata?.full_name || fullName,
             is_active: true,
             is_verified: true,
           });
@@ -120,11 +120,11 @@ export default function LoginPage() {
         }
       }
 
-      // Local fallback sign-in
+      // Local fallback sign-in with dynamic email & auto-derived name
       login("mock_access_token_socialpilot", {
-        id: "usr-demo",
-        email: email || "alex.designer@socialpilot.ai",
-        full_name: "Alex Rivera",
+        id: "usr-" + Date.now(),
+        email: email || "admin@socialpilot.ai",
+        full_name: fullName,
         is_active: true,
         is_verified: true,
       });
@@ -203,7 +203,7 @@ export default function LoginPage() {
     login("demo_token_express", {
       id: "usr-demo",
       email: "demo@socialpilot.ai",
-      full_name: "Alex Rivera",
+      full_name: "Demo Admin",
       is_active: true,
       is_verified: true,
     });

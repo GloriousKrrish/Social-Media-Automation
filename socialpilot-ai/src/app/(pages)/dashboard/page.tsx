@@ -15,6 +15,7 @@ import {
 import { kpiData, engagementData, followerGrowthData, contentScoreData, recentActivity, scheduledPosts } from "@/lib/mock-data";
 import { staggerContainer } from "@/lib/animations";
 import { formatNumber } from "@/lib/utils";
+import { useAuth } from "@/providers/AuthProvider";
 
 const iconMap: Record<string, React.ElementType> = {
   send: Send, calendar: CalendarDays, bot: Bot, activity: Activity,
@@ -99,6 +100,9 @@ const statusBg: Record<string, string> = {
 };
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const userName = user?.full_name ? user.full_name.split(" ")[0] : "User";
+
   return (
     <div className="page-container">
       {/* Header */}
@@ -111,7 +115,7 @@ export default function DashboardPage() {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0A0A0B", margin: 0, letterSpacing: "-0.025em", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              Good morning, Alex 👋
+              Welcome back, {userName} 👋
             </h1>
             <p style={{ color: "#71717A", fontSize: 14, marginTop: 6, margin: "6px 0 0" }}>
               Your AI agents published <strong style={{ color: "#059669" }}>23 posts</strong> while you were away. Here&apos;s your performance overview.

@@ -29,6 +29,7 @@ import {
   Shield,
 } from "lucide-react";
 import { Workspace } from "@/types/core";
+import { useAuth } from "@/providers/AuthProvider";
 
 const workspacesList: Workspace[] = [
   { id: "ws-1", name: "Acme Corp SaaS", logo: "🚀", plan: "Enterprise", role: "Admin", membersCount: 14 },
@@ -78,6 +79,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
+  const { user } = useAuth();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const [activeWorkspace, setActiveWorkspace] = useState<Workspace>(workspacesList[0]);
   const [wsDropdownOpen, setWsDropdownOpen] = useState(false);
@@ -308,7 +310,7 @@ export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
               fontWeight: 700,
             }}
           >
-            AD
+            {user?.initials || "US"}
           </div>
           <div
             style={{
@@ -318,7 +320,7 @@ export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
               width: 9,
               height: 9,
               borderRadius: "50%",
-              background: "#4A7A5D",
+              background: user ? "#4A7A5D" : "#A3968C",
               border: "2px solid #FFFFFF",
             }}
           />
@@ -326,11 +328,11 @@ export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
 
         {!sidebarCollapsed && (
           <div style={{ flex: 1, overflow: "hidden" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1613", whiteSpace: "nowrap" }}>
-              Admin Director
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1613", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {user?.full_name || "Guest User"}
             </div>
-            <div style={{ fontSize: 11, color: "#6E6259", whiteSpace: "nowrap" }}>
-              admin@socialpilot.ai
+            <div style={{ fontSize: 11, color: "#6E6259", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {user?.email || "not signed in"}
             </div>
           </div>
         )}

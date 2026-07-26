@@ -18,8 +18,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Info,
+  LogOut,
+  User as UserIcon,
 } from "lucide-react";
 import { UserRole } from "@/types/core";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface TopNavProps {
   sidebarWidth: number;
@@ -44,10 +47,12 @@ const pageBreadcrumbs: Record<string, string[]> = {
 };
 
 export default function TopNav({ sidebarWidth, activePage, onOpenCommandPalette }: TopNavProps) {
+  const { user, logout } = useAuth();
   const [userRole, setUserRole] = useState<UserRole>("Admin");
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const breadcrumbPath = pageBreadcrumbs[activePage] || ["SocialPilot AI", activePage];
 
@@ -299,27 +304,117 @@ export default function TopNav({ sidebarWidth, activePage, onOpenCommandPalette 
       </button>
 
       {/* User Login / Profile Avatar Link */}
-      <a
-        href="/login"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "4px 10px",
-          borderRadius: 8,
-          background: "#F7F3ED",
-          border: "1px solid #EAE4DC",
-          textDecoration: "none",
-          color: "#1C1613",
-          fontSize: 12,
-          fontWeight: 700,
-        }}
-      >
-        <div style={{ width: 26, height: 26, borderRadius: "50%", background: "#2563EB", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 11 }}>
-          AR
-        </div>
-        <span>Alex</span>
-      </a>
+      <div style={{ position: "relative" }}>
+        <button
+          onClick={() => setUserMenuOpen(!userMenuOpen)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "4px 10px",
+            borderRadius: 8,
+            background: "#F7F3ED",
+            border: "1px solid #EAE4DC",
+            color: "#1C1613",
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          <div
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: "50%",
+              background: "#3C2A21",
+              color: "#FFFFFF",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 800,
+              fontSize: 11,
+            }}
+          >
+            {user?.initials || "US"}
+          </div>
+          <span>{user?.full_name ? user.full_name.split(" ")[0] : "Account"}</span>
+        </button>
+
+        <AnimatePresence>
+          {userMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              style={{
+                position: "absolute",
+                top: "115%",
+                right: 0,
+                width: 220,
+                background: "#FFFFFF",
+                border: "1px solid #EAE4DC",
+                borderRadius: 10,
+                boxShadow: "0 12px 24px rgba(60, 42, 33, 0.12)",
+                padding: 8,
+                zIndex: 50,
+              }}
+            >
+              <div style={{ padding: "6px 8px", borderBottom: "1px solid #F0EAE1", marginBottom: 6 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1613" }}>
+                  {user?.full_name || "Guest User"}
+                </div>
+                <div style={{ fontSize: 11, color: "#6E6259", wordBreak: "break-all" }}>
+                  {user?.email || "not signed in"}
+                </div>
+              </div>
+
+              <a
+                href="/login"
+                onClick={() => setUserMenuOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 10px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#1C1613",
+                  borderRadius: 6,
+                  textDecoration: "none",
+                }}
+                className="dropdown-action-item"
+              >
+                <UserIcon size={14} color="#3C2A21" /> Switch Account
+              </a>
+
+              <button
+                onClick={() => {
+                  logout();
+                  setUserMenuOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 10px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#A85858",
+                  background: "none",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+                className="dropdown-action-item"
+              >
+                <LogOut size={14} color="#A85858" /> Sign Out
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
 
       <style jsx>{`
