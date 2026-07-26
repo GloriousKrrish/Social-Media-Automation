@@ -75,7 +75,7 @@ function AgentCard({ agent, index }: { agent: AgentItem; index: number }) {
         <motion.button
           onClick={() => toggleAgent(agent.id)}
           style={{
-            width: 40, height: 22, borderRadius: 99, flexShrink: 0,
+            width: "40px", height: "22px", borderRadius: 99, flexShrink: 0,
             background: enabled ? "#059669" : "#E4E4E7",
             border: "none", cursor: "pointer", position: "relative",
             transition: "background 0.25s",
