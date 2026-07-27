@@ -60,8 +60,9 @@ export function AIImageStudio() {
       });
 
       const data = await res.json();
-      if (data.imageUrl) {
-        setGeneratedUrl(data.imageUrl);
+      const imageUrl = data.imageUrl || data.image_url;
+      if (imageUrl) {
+        setGeneratedUrl(imageUrl);
         setRenderedPrompt(data.rendered_prompt || prompt);
 
         const newRecord: AIImageRecordItem = {
@@ -73,7 +74,7 @@ export function AIImageStudio() {
           aspect_ratio: data.aspect_ratio || selectedRatio,
           width: data.width || 1080,
           height: data.height || 1080,
-          image_url: data.imageUrl,
+          image_url: imageUrl,
           status: "success",
           created_at: new Date().toISOString(),
         };

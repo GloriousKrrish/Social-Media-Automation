@@ -26,7 +26,12 @@ export async function POST(req: Request) {
 
     if (backendRes.ok) {
       const data = await backendRes.json();
-      return NextResponse.json(data);
+      const imageUrl = data.image_url || data.imageUrl;
+      return NextResponse.json({
+        ...data,
+        imageUrl,
+        image_url: imageUrl,
+      });
     }
 
     // Fallback URL formatting if backend service is offline
@@ -54,6 +59,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       imageUrl,
+      image_url: imageUrl,
       prompt,
       width: reqWidth,
       height: reqHeight,

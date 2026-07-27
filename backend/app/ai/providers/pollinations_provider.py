@@ -27,7 +27,8 @@ class PollinationsProvider(BaseAIProvider):
         return "flux"
 
     def validate_configuration(self) -> bool:
-        return bool(self._api_key and len(self._api_key.strip()) > 3)
+        # Zero API key required for Pollinations image generation
+        return True
 
     def list_models(self) -> List[ModelInfo]:
         return [
@@ -65,8 +66,8 @@ class PollinationsProvider(BaseAIProvider):
         options: Optional[Dict[str, Any]] = None,
     ) -> ImageGenerationResponse:
         options = options or {}
-        width = options.get("width", 1024)
-        height = options.get("height", 1024)
+        width = options.get("width", 1080)
+        height = options.get("height", 1080)
         seed = options.get("seed", random.randint(100000, 999999))
         model = options.get("model", self.default_model)
         style = options.get("style", "photorealistic")
@@ -74,10 +75,8 @@ class PollinationsProvider(BaseAIProvider):
         enhanced_prompt = f"{prompt}, {style}, 8k resolution, professional lighting, clean aesthetic"
         encoded_prompt = urllib.parse.quote(enhanced_prompt)
 
+        # Standard clean Pollinations URL (no extra key query parameter required)
         query_params = f"width={width}&height={height}&seed={seed}&model={model}&nologo=true"
-        if self._api_key:
-            query_params += f"&key={self._api_key}"
-
         image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?{query_params}"
 
         return ImageGenerationResponse(

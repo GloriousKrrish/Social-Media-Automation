@@ -79,7 +79,8 @@ class AIImageService:
         )
 
         latency_ms = round((time.time() - start_time) * 1000, 2)
-        image_url = img_res.image_url or f"https://image.pollinations.ai/prompt/{urllib.parse.quote(rendered_prompt)}?width={width}&height={height}&nologo=true"
+        seed = random.randint(100000, 999999)
+        image_url = img_res.image_url or f"https://image.pollinations.ai/prompt/{urllib.parse.quote(rendered_prompt)}?width={width}&height={height}&seed={seed}&nologo=true"
 
         # 5. Record to AIImageRecord
         record = AIImageRecord(
