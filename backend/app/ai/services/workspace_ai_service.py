@@ -18,8 +18,9 @@ class WorkspaceAIService:
             setting = WorkspaceAISetting(
                 workspace_id=workspace_id,
                 preferred_provider="gemini",
-                preferred_model="gemini-1.5-pro",
+                preferred_model="gemini-2.0-flash",
                 default_language="English",
+
 
                 writing_tone="Professional",
                 creativity=0.7,
