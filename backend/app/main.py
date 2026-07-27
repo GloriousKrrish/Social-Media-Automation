@@ -3,13 +3,30 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.router import api_v1_router
 
+from contextlib import asynccontextmanager
+from app.db.session import engine
+from app.db.mixins import Base
+import app.db.models  # Ensure all models are registered
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Auto-create tables for local/dev persistence
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        print(f"Startup DB init warning: {e}")
+    yield
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
+
 
 # CORS
 app.add_middleware(
