@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, RefreshCw, Layers, Grid, Palette, Image as ImageIcon } from "lucide-react";
 import { ImagePromptBuilder } from "./ImagePromptBuilder";
@@ -9,6 +9,8 @@ import { AspectRatioSelector } from "./AspectRatioSelector";
 import { ImagePreviewCard } from "./ImagePreviewCard";
 import { ImageGallery, AIImageRecordItem } from "./ImageGallery";
 import { BrandKitForm, BrandKitData } from "./BrandKitForm";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 export function AIImageStudio() {
   const [activeTab, setActiveTab] = useState<"studio" | "gallery" | "brand">("studio");
@@ -21,6 +23,23 @@ export function AIImageStudio() {
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
   const [renderedPrompt, setRenderedPrompt] = useState("");
   const [galleryImages, setGalleryImages] = useState<AIImageRecordItem[]>([]);
+
+  // Fetch persistent image gallery history from backend
+  const fetchGallery = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/ai/images`);
+      if (res.ok) {
+        const data = await res.json();
+        setGalleryImages(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch gallery images", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchGallery();
+  }, []);
 
   const handleGenerate = async () => {
     if (!prompt) return;
@@ -51,7 +70,7 @@ export function AIImageStudio() {
           rendered_prompt: data.rendered_prompt || prompt,
           provider: data.provider || "pollinations",
           style: selectedStyle,
-          aspect_ratio: selectedRatio,
+          aspect_ratio: data.aspect_ratio || selectedRatio,
           width: data.width || 1080,
           height: data.height || 1080,
           image_url: data.imageUrl,
@@ -60,6 +79,7 @@ export function AIImageStudio() {
         };
 
         setGalleryImages((prev) => [newRecord, ...prev]);
+        fetchGallery(); // Refresh persistent gallery list
       }
     } catch (e) {
       console.error("Image generation failed", e);
@@ -68,8 +88,13 @@ export function AIImageStudio() {
     }
   };
 
-  const handleDeleteImage = (id: string) => {
+  const handleDeleteImage = async (id: string) => {
     setGalleryImages((prev) => prev.filter((img) => img.id !== id));
+    try {
+      await fetch(`${API_BASE_URL}/ai/images/${id}`, { method: "DELETE" });
+    } catch (e) {
+      console.error("Failed to delete image record from backend", e);
+    }
   };
 
   return (
