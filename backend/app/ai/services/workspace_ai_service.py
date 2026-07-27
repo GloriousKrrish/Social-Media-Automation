@@ -18,7 +18,7 @@ class WorkspaceAIService:
             setting = WorkspaceAISetting(
                 workspace_id=workspace_id,
                 preferred_provider="gemini",
-                preferred_model="gemini-2.0-flash",
+                preferred_model="gemini-3.5-flash",
                 default_language="English",
 
 

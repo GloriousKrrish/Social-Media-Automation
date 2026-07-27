@@ -11,10 +11,17 @@ from app.ai.schemas.ai_schemas import (
 
 logger = logging.getLogger(__name__)
 
-# Strict Multi-Tier Gemini Model Fallback Strategy
-PRIMARY_MODEL = "gemini-2.0-flash"
-SECONDARY_MODELS = ["gemini-2.0-pro-exp", "gemini-1.5-pro"]
-TERTIARY_MODEL = "gemini-1.5-flash"
+# =========================================================
+# STRICT MULTI-TIER GEMINI MODEL FALLBACK STRATEGY
+# Priority 1 (Primary):   Gemini 3.5 Flash
+# Priority 2 (Secondary): Gemini 2.5 Flash
+# Priority 3 (Tertiary):  Gemini 1.5 Flash (original model)
+# =========================================================
+TIER_1_MODEL = "gemini-3.5-flash"       # Primary — latest generation
+TIER_2_MODEL = "gemini-2.5-flash"       # Secondary fallback
+TIER_3_MODEL = "gemini-1.5-flash"       # Tertiary fallback — original model
+
+FALLBACK_CHAIN = [TIER_1_MODEL, TIER_2_MODEL, TIER_3_MODEL]
 
 
 class GeminiProvider(BaseAIProvider):
@@ -31,7 +38,7 @@ class GeminiProvider(BaseAIProvider):
 
     @property
     def default_model(self) -> str:
-        return PRIMARY_MODEL
+        return TIER_1_MODEL
 
     def validate_configuration(self) -> bool:
         return bool(self._api_key and len(self._api_key.strip()) > 5)
@@ -39,37 +46,28 @@ class GeminiProvider(BaseAIProvider):
     def list_models(self) -> List[ModelInfo]:
         return [
             ModelInfo(
-                id="gemini-2.0-flash",
-                name="Gemini 2.0 / 3.5 Flash (Primary Tier 1)",
+                id="gemini-3.5-flash",
+                name="Gemini 3.5 Flash — Primary (Tier 1)",
                 provider=self.provider_id,
-                description="Ultra-fast primary model for code completions, chat, and generation",
+                description="Latest generation frontier model for coding, agentic loops, and content generation",
                 max_tokens=8192,
                 supports_vision=True,
                 supports_function_calling=True,
             ),
             ModelInfo(
-                id="gemini-2.0-pro-exp",
-                name="Gemini 2.0 Pro Experimental (Secondary Tier 2)",
+                id="gemini-2.5-flash",
+                name="Gemini 2.5 Flash — Secondary Fallback (Tier 2)",
                 provider=self.provider_id,
-                description="High-reasoning secondary fallback model",
-                max_tokens=8192,
-                supports_vision=True,
-                supports_function_calling=True,
-            ),
-            ModelInfo(
-                id="gemini-1.5-pro",
-                name="Gemini 1.5 Pro (Secondary Standard)",
-                provider=self.provider_id,
-                description="Flagship multimodal long-context pro model",
+                description="Previous-generation model with strong reasoning capabilities",
                 max_tokens=8192,
                 supports_vision=True,
                 supports_function_calling=True,
             ),
             ModelInfo(
                 id="gemini-1.5-flash",
-                name="Gemini 1.5 Flash (Tertiary Tier 3)",
+                name="Gemini 1.5 Flash — Original Fallback (Tier 3)",
                 provider=self.provider_id,
-                description="Reliable tertiary fallback model for high volume tasks",
+                description="Original reliable model for high-volume tasks",
                 max_tokens=4096,
                 supports_vision=True,
             ),
@@ -82,7 +80,7 @@ class GeminiProvider(BaseAIProvider):
         system_prompt: Optional[str],
         temperature: float,
     ) -> Dict[str, Any]:
-        """Helper to send HTTP POST request to Google Gemini API for a given model tier."""
+        """Execute a single Gemini API call for one model tier."""
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self._api_key}"
 
@@ -115,7 +113,6 @@ class GeminiProvider(BaseAIProvider):
         options: Optional[Dict[str, Any]] = None,
     ) -> TextGenerationResponse:
         options = options or {}
-        requested_model = options.get("model") or PRIMARY_MODEL
         temperature = options.get("temperature", 0.7)
 
         start_time = time.time()
@@ -123,9 +120,9 @@ class GeminiProvider(BaseAIProvider):
         if not self.validate_configuration():
             latency = (time.time() - start_time) * 1000
             return TextGenerationResponse(
-                text=f"[Gemini Fallback Engine] (Simulated Output for '{prompt[:35]}...'): Key absent or invalid. Please configure GEMINI_API_KEY.",
+                text=f"[Gemini Fallback Engine] API key absent or invalid. Please configure GEMINI_API_KEY in backend/.env",
                 provider=self.provider_id,
-                model=requested_model,
+                model=TIER_1_MODEL,
                 prompt_tokens=len(prompt.split()),
                 completion_tokens=25,
                 total_tokens=len(prompt.split()) + 25,
@@ -134,19 +131,14 @@ class GeminiProvider(BaseAIProvider):
                 usage_metadata={"simulated": True, "reason": "missing_api_key"},
             )
 
-        # Multi-Tier Fallback Cascade Order
-        tier_fallback_queue = [requested_model]
-        for sec in SECONDARY_MODELS:
-            if sec not in tier_fallback_queue:
-                tier_fallback_queue.append(sec)
-        if TERTIARY_MODEL not in tier_fallback_queue:
-            tier_fallback_queue.append(TERTIARY_MODEL)
-
+        # ─── STRICT FALLBACK CASCADE: 3.5 → 2.5 → 1.5 ───
         tier_failures = []
 
-        for tier_index, target_model in enumerate(tier_fallback_queue, start=1):
+        for tier_index, target_model in enumerate(FALLBACK_CHAIN, start=1):
             try:
-                logger.info(f"⚡ [Gemini Provider Router] Attempting Tier {tier_index} model: '{target_model}'")
+                logger.info(
+                    f"⚡ [Gemini Router] Tier {tier_index} → {target_model}"
+                )
                 result = await self._execute_single_model_call(
                     target_model, prompt, system_prompt, temperature
                 )
@@ -154,6 +146,10 @@ class GeminiProvider(BaseAIProvider):
                 latency = (time.time() - start_time) * 1000
                 text = result["text"]
                 usage = result["usage"]
+
+                logger.info(
+                    f"✅ [Gemini Router] Tier {tier_index} ({target_model}) succeeded in {latency:.0f}ms"
+                )
 
                 return TextGenerationResponse(
                     text=text,
@@ -166,21 +162,24 @@ class GeminiProvider(BaseAIProvider):
                     finish_reason="stop",
                     usage_metadata={
                         "raw_usage": usage,
-                        "tier_used": f"Tier {tier_index} ({target_model})",
+                        "tier_used": f"Tier {tier_index} — {target_model}",
                         "fallback_attempts": tier_failures,
                     },
                 )
             except Exception as e:
-                err_msg = f"Tier {tier_index} ({target_model}) failed: {str(e)}"
-                logger.warning(f"⚠️ [Gemini Fallback Cascade] {err_msg}")
+                err_msg = f"Tier {tier_index} ({target_model}): {str(e)}"
+                logger.warning(f"⚠️ [Gemini Fallback] {err_msg}")
                 tier_failures.append(err_msg)
 
-        # All 3 tiers failed
+        # All 3 tiers exhausted
         latency = (time.time() - start_time) * 1000
+        logger.error(
+            f"❌ [Gemini Router] All tiers failed: {tier_failures}"
+        )
         return TextGenerationResponse(
-            text=f"[Gemini Multi-Tier Fallback Warning]: All model tiers ({', '.join(tier_fallback_queue)}) failed. Last error: {tier_failures[-1] if tier_failures else 'Unknown error'}",
+            text=f"[Gemini Multi-Tier Fallback] All model tiers exhausted ({' → '.join(FALLBACK_CHAIN)}). Errors: {'; '.join(tier_failures)}",
             provider=self.provider_id,
-            model=requested_model,
+            model=TIER_1_MODEL,
             prompt_tokens=0,
             completion_tokens=0,
             total_tokens=0,
