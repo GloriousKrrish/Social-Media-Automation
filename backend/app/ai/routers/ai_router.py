@@ -5,12 +5,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.ai.services.provider_manager import provider_manager
 from app.ai.services.prompt_engine import prompt_engine
+from app.ai.services.ai_generation_service import AIGenerationService
 from app.ai.services.workspace_ai_service import WorkspaceAIService
 from app.ai.services.ai_history_service import AIHistoryService
 from app.ai.services.usage_tracking_service import UsageTrackingService
 from app.ai.schemas.ai_schemas import (
     ProviderStatus,
+    ModelInfo,
     TextGenerationRequest,
+    RegenerateRequest,
     TextGenerationResponse,
     PromptTemplateSchema,
     PromptRenderRequest,
@@ -21,7 +24,7 @@ from app.ai.schemas.ai_schemas import (
     AIUsageStatResponse,
 )
 
-router = APIRouter(prefix="/ai", tags=["AI Platform Foundation"])
+router = APIRouter(prefix="/ai", tags=["AI Platform & Generation Engine"])
 
 
 @router.get("/providers", response_model=List[ProviderStatus])
@@ -30,8 +33,18 @@ async def list_providers():
     return provider_manager.list_providers()
 
 
+@router.get("/models", response_model=List[ModelInfo])
+async def list_models():
+    """List supported AI models across all registered providers."""
+    models: List[ModelInfo] = []
+    for provider_status in provider_manager.list_providers():
+        models.extend(provider_status.supported_models)
+    return models
+
+
 @router.get("/prompts", response_model=List[PromptTemplateSchema])
-async def list_prompts():
+@router.get("/templates", response_model=List[PromptTemplateSchema])
+async def list_templates():
     """List all registered reusable prompt templates."""
     return prompt_engine.list_templates()
 
@@ -46,53 +59,26 @@ async def render_prompt(request: PromptRenderRequest):
 
 
 @router.post("/generate", response_model=TextGenerationResponse)
-async def generate_text(
+async def generate_content(
     request: TextGenerationRequest,
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Execute AI text generation through Provider Manager and Prompt Engine.
-    Logs execution history and records usage stats automatically.
+    Execute AI text generation through AI Generation Service, Prompt Engine, and Provider Manager.
+    Automatically applies workspace AI settings, saves history, and tracks usage metrics.
     """
-    # Pre-process prompt through Prompt Engine if template is referenced
-    actual_prompt = request.prompt
-    actual_system_prompt = request.system_prompt
+    return await AIGenerationService.generate_content(db, request)
 
-    if request.prompt in [t.id for t in prompt_engine.list_templates()]:
-        rendered = prompt_engine.render(
-            PromptRenderRequest(
-                template_id=request.prompt,
-                variables=request.template_variables or {},
-            )
-        )
-        actual_prompt = rendered.rendered_prompt
-        actual_system_prompt = actual_system_prompt or rendered.system_prompt
 
-    # Execute generation through Provider Manager
-    generation_request = TextGenerationRequest(
-        prompt=actual_prompt,
-        system_prompt=actual_system_prompt,
-        provider=request.provider,
-        model=request.model,
-        temperature=request.temperature,
-        max_tokens=request.max_tokens,
-        workspace_id=request.workspace_id,
-    )
-
-    response = await provider_manager.generate_text(generation_request)
-
-    # Record AI history log
-    try:
-        await AIHistoryService.record_generation(
-            db=db,
-            prompt=actual_prompt,
-            response=response,
-            workspace_id=request.workspace_id,
-        )
-    except Exception:
-        pass  # Non-blocking failure for history logging
-
-    return response
+@router.post("/regenerate", response_model=TextGenerationResponse)
+async def regenerate_content(
+    request: RegenerateRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Regenerate content with updated parameters or higher temperature.
+    """
+    return await AIGenerationService.regenerate_content(db, request)
 
 
 @router.get("/workspaces/{workspace_id}/settings", response_model=WorkspaceAISettingsResponse)

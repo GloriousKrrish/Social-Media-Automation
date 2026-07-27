@@ -20,6 +20,8 @@ export interface ProviderStatus {
 
 export interface TextGenerationRequest {
   prompt: string;
+  generation_type?: string;
+  context_input?: string;
   template_variables?: Record<string, any>;
   system_prompt?: string;
   provider?: string;
@@ -29,10 +31,23 @@ export interface TextGenerationRequest {
   workspace_id?: string;
 }
 
+export interface RegenerateRequest {
+  history_id?: string;
+  prompt?: string;
+  generation_type?: string;
+  context_input?: string;
+  provider?: string;
+  model?: string;
+  temperature?: number;
+  workspace_id?: string;
+}
+
 export interface TextGenerationResponse {
   text: string;
   provider: string;
   model: string;
+  generation_type: string;
+  rendered_prompt?: string;
   prompt_tokens: number;
   completion_tokens: number;
   total_tokens: number;
@@ -71,6 +86,8 @@ export interface AIHistoryRecord {
   id: string;
   workspace_id?: string;
   prompt: string;
+  rendered_prompt?: string;
+  generation_type?: string;
   response: string;
   provider: string;
   model: string;

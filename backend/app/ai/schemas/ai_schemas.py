@@ -29,13 +29,26 @@ class ProviderStatus(BaseModel):
 
 
 class TextGenerationRequest(BaseModel):
-    prompt: str = Field(..., description="User prompt or template name")
+    prompt: str = Field(..., description="User prompt, topic, or template ID")
+    generation_type: Optional[str] = Field("general", description="Type of generation: linkedin_post, twitter_post, blog_outline, etc.")
+    context_input: Optional[str] = Field(None, description="Optional background context or source text")
     template_variables: Optional[Dict[str, Any]] = None
     system_prompt: Optional[str] = None
     provider: Optional[str] = Field(None, description="Requested provider (e.g. openai, gemini, anthropic)")
     model: Optional[str] = None
-    temperature: Optional[float] = Field(0.7, ge=0.0, le=2.0)
-    max_tokens: Optional[int] = Field(1000, ge=1, le=8192)
+    temperature: Optional[float] = Field(None, ge=0.0, le=2.0)
+    max_tokens: Optional[int] = Field(None, ge=1, le=8192)
+    workspace_id: Optional[str] = None
+
+
+class RegenerateRequest(BaseModel):
+    history_id: Optional[str] = Field(None, description="History log ID to regenerate")
+    prompt: Optional[str] = None
+    generation_type: Optional[str] = None
+    context_input: Optional[str] = None
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    temperature: Optional[float] = None
     workspace_id: Optional[str] = None
 
 
@@ -43,6 +56,8 @@ class TextGenerationResponse(BaseModel):
     text: str
     provider: str
     model: str
+    generation_type: str = "general"
+    rendered_prompt: Optional[str] = None
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
@@ -53,7 +68,7 @@ class TextGenerationResponse(BaseModel):
 
 class ImageGenerationResponse(BaseModel):
     status: str = "deferred"
-    message: str = "Image generation is deferred in Phase 5.1 per platform specification."
+    message: str = "Image generation is deferred in Phase 5.1/5.2 per platform specification."
     image_url: Optional[str] = None
 
 
@@ -117,6 +132,8 @@ class AIHistoryRecordResponse(BaseModel):
     id: str
     workspace_id: Optional[str]
     prompt: str
+    rendered_prompt: Optional[str] = None
+    generation_type: Optional[str] = "general"
     response: str
     provider: str
     model: str

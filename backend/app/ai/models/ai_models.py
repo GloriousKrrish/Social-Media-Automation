@@ -23,6 +23,8 @@ class AIHistoryRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     workspace_id: Mapped[Optional[str]] = mapped_column(String(36), index=True, nullable=True)
     prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    rendered_prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    generation_type: Mapped[Optional[str]] = mapped_column(String(50), index=True, default="general", nullable=True)
     response: Mapped[str] = mapped_column(Text, nullable=False)
     provider: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
     model: Mapped[str] = mapped_column(String(100), nullable=False)

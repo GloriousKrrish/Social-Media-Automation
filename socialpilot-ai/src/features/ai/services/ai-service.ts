@@ -74,6 +74,17 @@ export const aiService = {
     return await res.json();
   },
 
+  async regenerateText(req: Partial<TextGenerationRequest>): Promise<TextGenerationResponse> {
+    const res = await fetch(`${API_BASE_URL}/ai/regenerate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) throw new Error("AI Content Regeneration request failed");
+    return await res.json();
+  },
+
+
   async getWorkspaceSettings(workspaceId: string = "default"): Promise<WorkspaceAISettings> {
     try {
       const res = await fetch(`${API_BASE_URL}/ai/workspaces/${workspaceId}/settings`);
