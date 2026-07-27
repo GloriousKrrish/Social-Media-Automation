@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()  # Ensure all .env vars (GEMINI_API_KEY, etc.) are in os.environ
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings

@@ -62,7 +62,7 @@ class AIProviderManager:
         # Default fallback
         return self._providers.get("openai", list(self._providers.values())[0])
 
-    def list_providers() -> List[ProviderStatus]:
+    def list_providers(self) -> List[ProviderStatus]:
         """List health and configuration status of all registered providers."""
         return [p.get_status() for p in self._providers.values()]
 

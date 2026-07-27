@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -7,7 +9,45 @@ export async function POST(req: Request) {
 
     const promptText = topic || `The future of ${platform} automation and AI content strategy`;
 
-    // Check if user provided an OpenAI / Anthropic key
+    // ── STRATEGY 1: Forward to backend FastAPI Gemini Provider (3.5 → 2.5 → 1.5 fallback) ──
+    try {
+      const systemPrompt = `You are an expert social media strategist and master copywriter for ${platform || "LinkedIn"}. 
+Tone: ${tone || "Professional"}. 
+Target Audience: ${audience || "General Business Professionals"}.
+Call to action: ${cta || "Engage with this post"}.
+Include relevant emojis and hashtags. Make the content engaging, shareable, and actionable.
+Keywords to include: ${keywords || "AI, Growth, Innovation"}.`;
+
+      const backendRes = await fetch(`${API_BASE_URL}/ai/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: `Write an engaging ${platform || "LinkedIn"} post about: ${promptText}`,
+          system_prompt: systemPrompt,
+          provider: "gemini",
+          temperature: 0.8,
+          max_tokens: 1200,
+        }),
+      });
+
+      if (backendRes.ok) {
+        const data = await backendRes.json();
+        if (data.text && !data.text.startsWith("[Gemini") && data.finish_reason !== "error") {
+          return NextResponse.json({
+            success: true,
+            text: data.text,
+            source: `Gemini AI (${data.model || "gemini-3.5-flash"})`,
+            model: data.model,
+            provider: data.provider,
+            latency_ms: data.latency_ms,
+          });
+        }
+      }
+    } catch (backendErr) {
+      console.log("[Content Route] Backend Gemini unavailable, trying next strategy...", backendErr);
+    }
+
+    // ── STRATEGY 2: Direct OpenAI key (if user provided one) ──
     if (apiKey && provider === "openai") {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -39,7 +79,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // High-performance procedural LLM engine fallback
+    // ── STRATEGY 3: High-quality procedural template engine (offline fallback) ──
     const platformTemplates: Record<string, (topic: string) => string> = {
       linkedin: (t) => `🚀 ${t.toUpperCase()} — Essential Strategy for B2B Growth in 2025
 
@@ -98,7 +138,7 @@ ${cta || "Join the discussion in the comments below!"}`,
     return NextResponse.json({
       success: true,
       text: generatedText,
-      source: "SocialPilot AI Engine",
+      source: "SocialPilot AI Template Engine (Offline Fallback)",
     });
   } catch (error: any) {
     return NextResponse.json(
