@@ -17,9 +17,10 @@ class WorkspaceAIService:
             # Create default workspace settings
             setting = WorkspaceAISetting(
                 workspace_id=workspace_id,
-                preferred_provider="openai",
-                preferred_model="gpt-4o",
+                preferred_provider="gemini",
+                preferred_model="gemini-1.5-pro",
                 default_language="English",
+
                 writing_tone="Professional",
                 creativity=0.7,
                 target_audience="General Business",
