@@ -10,6 +10,15 @@ import {
 import { useAppStore } from "@/store/app-store";
 import { useAuth } from "@/providers/AuthProvider";
 import { useAppSettings, useApiKeys, useCreateApiKey, useAuditLogs } from "@/hooks/useInfrastructure";
+import { useAIProviders } from "@/features/ai/hooks/useAIProviders";
+import { useAISettings } from "@/features/ai/hooks/useAISettings";
+import { useAIHistory } from "@/features/ai/hooks/useAIHistory";
+import { useAIUsage } from "@/features/ai/hooks/useAIUsage";
+import { ProviderSelectionCard } from "@/features/ai/components/ProviderSelectionCard";
+import { AISettingsForm } from "@/features/ai/components/AISettingsForm";
+import { AIHistoryTable } from "@/features/ai/components/AIHistoryTable";
+import { AIUsageStatsCard } from "@/features/ai/components/AIUsageStatsCard";
+
 
 const settingsSections = [
   { id: "general",      label: "General",         icon: Settings  },
@@ -26,8 +35,13 @@ export default function SettingsPage() {
   const { data: apiKeysData, isLoading: isKeysLoading } = useApiKeys();
   const { mutate: createKeyMutate, isPending: isCreatingKey } = useCreateApiKey();
   const { data: auditLogsData } = useAuditLogs();
+  const { data: aiProviders } = useAIProviders();
+  const { data: aiSettingsData, updateSettings: updateAISettings, isUpdating: isUpdatingAI } = useAISettings();
+  const { data: aiHistoryData, isLoading: isHistoryLoading } = useAIHistory();
+  const { data: aiUsageData } = useAIUsage();
 
   const [activeSection, setActiveSection] = useState("general");
+
   const [showKey, setShowKey] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -236,6 +250,54 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {activeSection === "ai_models" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {/* Provider Selection Card */}
+              <div className="card" style={{ padding: 28 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 6px", color: "#0A0A0B" }}>Enterprise AI Providers</h2>
+                <p style={{ fontSize: 13, color: "#71717A", margin: "0 0 20px" }}>
+                  Configure preferred provider abstractions and monitor API integration health status.
+                </p>
+                <ProviderSelectionCard
+                  providers={aiProviders || []}
+                  selectedProvider={aiSettingsData?.preferred_provider || "openai"}
+                  onSelectProvider={(pId) => updateAISettings({ preferred_provider: pId })}
+                />
+              </div>
+
+              {/* Workspace AI Parameters */}
+              <div className="card" style={{ padding: 28 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 6px", color: "#0A0A0B" }}>Workspace AI Persona & Parameters</h2>
+                <p style={{ fontSize: 13, color: "#71717A", margin: "0 0 20px" }}>
+                  Establish reusable tone, brand voice, and generation settings applied across all AI execution workflows.
+                </p>
+                <AISettingsForm
+                  settings={aiSettingsData}
+                  onSave={(updates) => updateAISettings(updates)}
+                  isSaving={isUpdatingAI}
+                />
+              </div>
+
+              {/* Usage Analytics */}
+              <div className="card" style={{ padding: 28 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 6px", color: "#0A0A0B" }}>AI Usage & Latency Foundation</h2>
+                <p style={{ fontSize: 13, color: "#71717A", margin: "0 0 20px" }}>
+                  Provider-independent request counts, latency metrics, and performance analytics.
+                </p>
+                <AIUsageStatsCard stats={aiUsageData} />
+              </div>
+
+              {/* Generation History */}
+              <div className="card" style={{ padding: 28 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 6px", color: "#0A0A0B" }}>AI Generation History Log</h2>
+                <p style={{ fontSize: 13, color: "#71717A", margin: "0 0 20px" }}>
+                  Audit trail of all prompts, providers, models, response latencies, and execution statuses.
+                </p>
+                <AIHistoryTable history={aiHistoryData || []} isLoading={isHistoryLoading} />
+              </div>
+            </div>
+          )}
+
           {activeSection === "security" && (
             <div className="card" style={{ padding: 32 }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 8px", color: "#0A0A0B" }}>Security Audit Logs</h2>
@@ -268,6 +330,7 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+
         </motion.div>
       </div>
     </div>

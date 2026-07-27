@@ -174,3 +174,7 @@ class SystemLog(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     level: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     context: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
+
+from app.ai.models.ai_models import WorkspaceAISetting, AIHistoryRecord, AIUsageStat
+
