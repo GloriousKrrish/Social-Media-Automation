@@ -4,10 +4,12 @@ from app.ai.providers.base import BaseAIProvider
 from app.ai.providers.openai_provider import OpenAIProvider
 from app.ai.providers.gemini_provider import GeminiProvider
 from app.ai.providers.anthropic_provider import AnthropicProvider
+from app.ai.providers.pollinations_provider import PollinationsProvider
 from app.ai.schemas.ai_schemas import (
     ProviderStatus,
     TextGenerationResponse,
     TextGenerationRequest,
+    ImageGenerationResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,6 +30,17 @@ class AIProviderManager:
         self.register_provider(OpenAIProvider())
         self.register_provider(GeminiProvider())
         self.register_provider(AnthropicProvider())
+        self.register_provider(PollinationsProvider())
+
+    def generate_image(self, prompt: str, options: Optional[Dict] = None) -> ImageGenerationResponse:
+        """Generate AI image via registered image provider (Pollinations)."""
+        pollination_p = self._providers.get("pollinations")
+        if pollination_p:
+            return pollination_p.generate_image(prompt, options)
+        # Fallback to base stub
+        default_p = self.get_provider()
+        return default_p.generate_image(prompt, options)
+
 
     def register_provider(self, provider: BaseAIProvider) -> None:
         """Register or override an AI provider."""

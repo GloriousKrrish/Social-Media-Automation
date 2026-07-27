@@ -81,6 +81,41 @@ async def regenerate_content(
     return await AIGenerationService.regenerate_content(db, request)
 
 
+@router.post("/generate-image")
+async def generate_image(payload: dict):
+    """
+    Generate high-resolution AI image via Pollinations AI Engine.
+    """
+    prompt = payload.get("prompt", "")
+    style = payload.get("style", "photorealistic")
+    aspect_ratio = payload.get("aspectRatio", "1:1")
+
+    width = 1024
+    height = 1024
+    if aspect_ratio == "16:9":
+        width, height = 1280, 720
+    elif aspect_ratio == "9:16":
+        width, height = 720, 1280
+    elif aspect_ratio == "4:5":
+        width, height = 800, 1000
+    elif aspect_ratio == "2:1":
+        width, height = 1200, 600
+
+    img_response = provider_manager.generate_image(prompt, {
+        "style": style,
+        "width": width,
+        "height": height,
+    })
+
+    return {
+        "success": img_response.status == "success",
+        "imageUrl": img_response.image_url,
+        "status": img_response.status,
+        "message": img_response.message,
+    }
+
+
+
 @router.get("/workspaces/{workspace_id}/settings", response_model=WorkspaceAISettingsResponse)
 async def get_workspace_ai_settings(
     workspace_id: str,
