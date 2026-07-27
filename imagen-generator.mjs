@@ -41,8 +41,8 @@ const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 // ── Gemini image-capable models to try (in priority order) ──
 const GEMINI_IMAGE_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash-exp",
+  "gemini-2.5-flash-image",
+  "gemini-3.1-flash-image",
 ];
 
 /**
