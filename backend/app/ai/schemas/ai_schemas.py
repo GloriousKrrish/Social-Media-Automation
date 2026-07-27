@@ -23,9 +23,11 @@ class ProviderStatus(BaseModel):
     name: str
     is_available: bool
     is_configured: bool
+    health_state: str = Field("UNCONFIGURED", description="Explicit health state: UNCONFIGURED | CONFIGURED | CONNECTED | FAILED | UNKNOWN")
     default_model: str
     supported_models: List[ModelInfo]
     error_message: Optional[str] = None
+
 
 
 class TextGenerationRequest(BaseModel):

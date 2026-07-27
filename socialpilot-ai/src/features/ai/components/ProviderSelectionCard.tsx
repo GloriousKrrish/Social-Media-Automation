@@ -48,14 +48,15 @@ export function ProviderSelectionCard({ providers, selectedProvider, onSelectPro
               <span style={{ color: "#71717A" }}>{p.supported_models.length} Models</span>
               {p.is_configured ? (
                 <span style={{ color: "#059669", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-                  <CheckCircle size={12} /> Configured
+                  <CheckCircle size={12} /> {p.health_state || "CONNECTED"}
                 </span>
               ) : (
                 <span style={{ color: "#D97706", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-                  <AlertTriangle size={12} /> Key Required
+                  <AlertTriangle size={12} /> UNCONFIGURED
                 </span>
               )}
             </div>
+
           </motion.div>
         );
       })}

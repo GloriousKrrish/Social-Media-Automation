@@ -13,6 +13,7 @@ export interface ProviderStatus {
   name: string;
   is_available: boolean;
   is_configured: boolean;
+  health_state?: string;
   default_model: string;
   supported_models: ModelInfo[];
   error_message?: string | null;

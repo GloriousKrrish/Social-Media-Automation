@@ -76,14 +76,17 @@ class BaseAIProvider(ABC):
         )
 
     def get_status(self) -> ProviderStatus:
-        """Get provider health and config status."""
+        """Get explicit provider health and config status."""
         is_conf = self.validate_configuration()
+        health_state = "CONNECTED" if is_conf else "UNCONFIGURED"
         return ProviderStatus(
             provider_id=self.provider_id,
             name=self.name,
             is_available=is_conf,
             is_configured=is_conf,
+            health_state=health_state,
             default_model=self.default_model,
             supported_models=self.list_models(),
             error_message=None if is_conf else f"{self.name} API key is missing or invalid.",
         )
+
