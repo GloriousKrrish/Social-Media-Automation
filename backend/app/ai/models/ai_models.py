@@ -18,6 +18,19 @@ class WorkspaceAISetting(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     response_length: Mapped[str] = mapped_column(String(50), default="Medium", nullable=False)
 
 
+class WorkspaceBrandKit(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    __tablename__ = "workspace_brand_kits"
+
+    workspace_id: Mapped[str] = mapped_column(String(36), unique=True, index=True, nullable=False)
+    brand_name: Mapped[str] = mapped_column(String(255), default="SocialPilot AI", nullable=False)
+    brand_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    primary_color: Mapped[str] = mapped_column(String(20), default="#2563EB", nullable=False)
+    secondary_color: Mapped[str] = mapped_column(String(20), default="#7C3AED", nullable=False)
+    typography: Mapped[str] = mapped_column(String(100), default="Plus Jakarta Sans", nullable=False)
+    logo_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    preferred_visual_style: Mapped[str] = mapped_column(String(50), default="photorealistic", nullable=False)
+
+
 class AIHistoryRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "ai_history_records"
 
@@ -31,6 +44,22 @@ class AIHistoryRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String(50), default="success", nullable=False)
     latency_ms: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     usage_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
+
+class AIImageRecord(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    __tablename__ = "ai_image_records"
+
+    workspace_id: Mapped[Optional[str]] = mapped_column(String(36), index=True, nullable=True)
+    prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    rendered_prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    provider: Mapped[str] = mapped_column(String(50), index=True, default="pollinations", nullable=False)
+    style: Mapped[str] = mapped_column(String(50), index=True, default="photorealistic", nullable=False)
+    aspect_ratio: Mapped[str] = mapped_column(String(20), default="1:1", nullable=False)
+    width: Mapped[int] = mapped_column(Integer, default=1080, nullable=False)
+    height: Mapped[int] = mapped_column(Integer, default=1080, nullable=False)
+    image_url: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="success", nullable=False)
+    latency_ms: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
 
 
 class AIUsageStat(Base, UUIDPrimaryKeyMixin, TimestampMixin):

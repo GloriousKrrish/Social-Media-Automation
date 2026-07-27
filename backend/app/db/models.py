@@ -176,5 +176,6 @@ class SystemLog(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     context: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
 
-from app.ai.models.ai_models import WorkspaceAISetting, AIHistoryRecord, AIUsageStat
+from app.ai.models.ai_models import WorkspaceAISetting, AIHistoryRecord, AIUsageStat, AIImageRecord, WorkspaceBrandKit
+
 

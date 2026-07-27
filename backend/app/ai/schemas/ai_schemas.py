@@ -29,7 +29,6 @@ class ProviderStatus(BaseModel):
     error_message: Optional[str] = None
 
 
-
 class TextGenerationRequest(BaseModel):
     prompt: str = Field(..., description="User prompt, topic, or template ID")
     generation_type: Optional[str] = Field("general", description="Type of generation: linkedin_post, twitter_post, blog_outline, etc.")
@@ -68,10 +67,70 @@ class TextGenerationResponse(BaseModel):
     usage_metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
+class ImageGenerationRequest(BaseModel):
+    prompt: str = Field(..., description="Detailed text description of the image")
+    style: Optional[str] = Field("photorealistic", description="Image style preset: photorealistic, modern, corporate, luxury, minimal, flat_illustration, watercolor, anime, 3d_render, cyberpunk, vintage, cartoon")
+    aspect_ratio: Optional[str] = Field("1:1", description="Aspect ratio: 1:1, 4:5, 16:9, 9:16, 2:1, custom")
+    width: Optional[int] = Field(1080, ge=128, le=2048)
+    height: Optional[int] = Field(1080, ge=128, le=2048)
+    workspace_id: Optional[str] = None
+
+
 class ImageGenerationResponse(BaseModel):
-    status: str = "deferred"
-    message: str = "Image generation is deferred in Phase 5.1/5.2 per platform specification."
+    status: str = "success"
+    message: str = "Image generated successfully."
     image_url: Optional[str] = None
+    rendered_prompt: Optional[str] = None
+    provider: str = "pollinations"
+    style: str = "photorealistic"
+    aspect_ratio: str = "1:1"
+    width: int = 1080
+    height: int = 1080
+    latency_ms: float = 0.0
+    record_id: Optional[str] = None
+
+
+class AIImageRecordResponse(BaseModel):
+    id: str
+    workspace_id: Optional[str]
+    prompt: str
+    rendered_prompt: str
+    provider: str
+    style: str
+    aspect_ratio: str
+    width: int
+    height: int
+    image_url: str
+    status: str
+    latency_ms: float
+    created_at: str
+
+
+class WorkspaceBrandKitBase(BaseModel):
+    brand_name: str = "SocialPilot AI"
+    brand_description: Optional[str] = None
+    primary_color: str = "#2563EB"
+    secondary_color: str = "#7C3AED"
+    typography: str = "Plus Jakarta Sans"
+    logo_url: Optional[str] = None
+    preferred_visual_style: str = "photorealistic"
+
+
+class WorkspaceBrandKitUpdate(BaseModel):
+    brand_name: Optional[str] = None
+    brand_description: Optional[str] = None
+    primary_color: Optional[str] = None
+    secondary_color: Optional[str] = None
+    typography: Optional[str] = None
+    logo_url: Optional[str] = None
+    preferred_visual_style: Optional[str] = None
+
+
+class WorkspaceBrandKitResponse(WorkspaceBrandKitBase):
+    id: str
+    workspace_id: str
+    created_at: str
+    updated_at: str
 
 
 class PromptTemplateSchema(BaseModel):
